@@ -932,3 +932,9 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
   radial-gradient(380px 300px at 62% -8%,rgba(202,177,234,.10),transparent 70%)}
 .sec::before,.sec::after,.why::before{content:none!important;display:none!important}
 .sec-soft,.sec{background:transparent!important}
+/* v4.5: faint "why" circle, fainter card pattern on large screens */
+.why::before{content:""!important;display:block!important;opacity:.32!important}
+@media (min-width:961px){
+  .pillar::after,.scard::after,.dcard::after,.ccard::after,.steps li::after,.bcard::after,.wizard::after{opacity:.03}
+  .ccard-wa::after{opacity:.05}
+}
