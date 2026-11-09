@@ -89,6 +89,7 @@
     <input id="g-pass" type="password" autocomplete="current-password" required>
     <div class="g-err" id="g-err"></div>
     <button type="submit">دخول</button>
+    <button type="button" class="g-alt" id="g-renew">تحديث توكن GitHub</button>
   </form>
   <form class="g-card" id="g-setup" hidden>
     <img src="../assets/img/logo-icon.png" alt="">
@@ -179,6 +180,7 @@
     try { var r = await fetch("auth.json?t=" + Date.now(), { cache: "no-store" }); if (r.ok) box = await r.json(); } catch (e) {}
     if (!box || !box.data) { $("g-login").hidden = true; $("g-setup").hidden = false; }
 
+    $("g-renew").onclick = function () { $("g-login").hidden = true; $("g-setup").hidden = false; };
     $("g-login").onsubmit = async function (e) {
       e.preventDefault(); busy(this, true); $("g-err").textContent = "";
       try { startCMS(await unseal(box, $("g-pass").value)); }
