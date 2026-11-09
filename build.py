@@ -232,7 +232,7 @@ def footer(L, key):
    </ul>
   </div>
  </div>
- <div class="wrap fbottom"><span>© {year} <bdi>أحمد الجمل</bdi> | <bdi dir="ltr">Ahmed Al Gamal</bdi> · {t["rights"]}</span><a class="dev-wa" href="https://wa.me/971507761628" target="_blank" rel="noopener" aria-label="WhatsApp Ahmed Al Gamal">{WA}<span dir="ltr">+971 50 776 1628</span></a></div>
+ <div class="wrap fbottom"><div class="sig"><span>© {year} <bdi>أحمد الجمل</bdi> | <bdi dir="ltr">Ahmed Al Gamal</bdi><span class="rt"> · {t["rights"]}</span></span><a class="dev-wa" href="https://wa.me/971507761628" target="_blank" rel="noopener" aria-label="WhatsApp Ahmed Al Gamal">{WA}<span dir="ltr">+971 50 776 1628</span></a></div></div>
 </footer>
 <div class="dock" role="group" aria-label="{t["footer_contact"]}">
  <a class="dock-wa" href="{wa_link(L)}" target="_blank" rel="noopener" data-track="whatsapp" aria-label="{t["cta_whatsapp"]}" title="{t["cta_whatsapp"]}">{WA}</a>
@@ -306,7 +306,7 @@ def faq_list(L, n=None):
 
 def band(L, me):
     t = T[L]
-    return f'''<section class="band grid-bg"><img class="band-bg" src="{rel(me, "assets/img/nurses.webp")}" alt="" loading="lazy" aria-hidden="true"><div class="wrap band-in reveal">
+    return f'''<section class="band grid-bg"><img class="band-bg" src="{rel(me, "assets/img/vitals.webp")}" alt="" loading="lazy" aria-hidden="true"><div class="wrap band-in reveal">
  <div><h2>{t["band_title"]}</h2><p>{t["band_text"]}</p></div>{cta_buttons(L, me)}</div></section>'''
 
 # ---------- pages ----------
@@ -318,6 +318,7 @@ def p_home(L):
     qs = "".join(f'<li>{ic("check")}<span>{q}</span></li>' for q in t["q_list"])
     body = f'''
 <section class="hero hx">
+ <img class="hx-bg" src="{rel(me, "assets/img/vitals.webp")}" alt="" width="700" height="601" aria-hidden="true">
  <div class="wrap hx-in">
   <div class="hx-txt">
    <h1>{t["hero_title"]}</h1>
@@ -330,7 +331,7 @@ def p_home(L):
   </div>
   <div class="hx-media">
    <div class="hx-frame">
-    <img src="{rel(me, "assets/img/hero.webp")}" alt="" width="720" height="900" fetchpriority="high"><img src="{rel(me, "assets/img/nurses.webp")}" alt="" width="620" height="775" loading="lazy"><img src="{rel(me, "assets/img/vitals.webp")}" alt="" width="700" height="601" loading="lazy">
+    <img src="{rel(me, "assets/img/hero.webp")}" alt="" width="720" height="900" fetchpriority="high"><img src="{rel(me, "assets/img/vitals.webp")}" alt="" width="700" height="601" loading="lazy">
    </div>
    <div class="hx-float hx-f1"><span class="fi">{ic("message")}</span><span><b>{t["float1_t"]}</b><small>{t["float1_s"]}</small></span></div>
    <div class="hx-float hx-f2"><span class="fi">{ic("user-check")}</span><span><b>{t["float2_t"]}</b><small>{t["float2_s"]}</small></span></div>
@@ -417,7 +418,7 @@ def p_about(L):
  <div class="pillars pillars-col">{pillars}</div>
 </div></section>
 <section class="sec sec-soft"><div class="wrap qbox reveal" id="nurses">
- <div class="qimg"><img src="{rel(me, "assets/img/nurses.webp")}" alt="" width="520" height="650" loading="lazy"></div>
+ <div class="qimg"><img src="{rel(me, "assets/img/hero.webp")}" alt="" width="720" height="900" loading="lazy"></div>
  <div class="qtxt"><h2>{t["nurses_title"]}</h2><p class="lead-dark">{t["nurses_text"]}</p><ul class="ticks">{np}</ul></div>
 </div></section>
 <section class="sec"><div class="wrap"><header class="shead reveal"><h2>{t["steps_title"]}</h2></header><ol class="steps">{steps}</ol></div></section>
@@ -467,10 +468,10 @@ def p_faq(L):
 def contact_block(L, me):
     t = T[L]
     return f'''<div class="ccards">
-  <a class="ccard ccard-wa reveal" href="{wa_link(L)}" target="_blank" rel="noopener" data-track="whatsapp">{WA}<span class="sr">{t["c_whatsapp"]}</span><span dir="ltr">{C["whatsapp_display"]}</span></a>
-  <a class="ccard reveal" href="tel:{C["phone"]}" data-track="call">{ic("phone")}<span class="sr">{t["c_phone"]}</span><span dir="ltr">{C["phone_display"]}</span></a>
-  <a class="ccard reveal" href="mailto:{C["email"]}">{ic("mail")}<span class="sr">{t["c_email"]}</span><span>{C["email"]}</span></a>
-  <div class="ccard reveal">{ic("pin")}<span class="sr">{t["c_address"]}</span><span>{C["city_" + L]}</span></div>
+  <a class="ccard ccard-wa reveal" href="{wa_link(L)}" target="_blank" rel="noopener" data-track="whatsapp">{WA}<span class="ct"><small>{t["c_whatsapp"]}</small><span dir="ltr">{C["whatsapp_display"]}</span></span></a>
+  <a class="ccard reveal" href="tel:{C["phone"]}" data-track="call">{ic("phone")}<span class="ct"><small>{t["c_phone"]}</small><span dir="ltr">{C["phone_display"]}</span></span></a>
+  <a class="ccard reveal" href="mailto:{C["email"]}">{ic("mail")}<span class="ct"><small>{t["c_email"]}</small><span>{C["email"]}</span></span></a>
+  <div class="ccard reveal">{ic("pin")}<span class="ct"><small>{t["c_address"]}</small><span>{C["city_" + L]}</span></span></div>
  </div>
  <div class="mapbox reveal"><iframe title="map" src="https://www.google.com/maps?q=Doha,Qatar&hl={L}&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>'''
 
@@ -517,7 +518,7 @@ BT = {
 
 def post_img(d):
     img = (d.get("image") or "").strip()
-    return img or "/assets/img/nurses.webp"
+    return img or "/assets/img/vitals.webp"
 
 def post_src(me, img):
     return rel(me, img.lstrip("/")) if img.startswith("/") else img
