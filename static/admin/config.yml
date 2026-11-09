@@ -1,4 +1,4 @@
-# لوحة تحكم المدونة (Sveltia CMS). الدخول بحساب GitHub.
+# لوحة تحكم المدونة (Sveltia CMS). الدخول بكلمة مرور (التوكن مشفّر في admin/auth.json).
 backend:
   name: github
   repo: Ahmedtalaat2/daralamana-site
