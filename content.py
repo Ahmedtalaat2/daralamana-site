@@ -118,6 +118,10 @@ T = {
         "hero_title": "ممرضـــة تدخـــل بيتك وأنت <span>مطمّـــن</span>",
         "hero_text": "رعاية تمريضية في البيت لأهلك، تعرف الممرضة قبل ما توصل، ويوصلك تقرير حالة المريض على الواتساب بعد كل زيارة.",
         "hero_points": ["تعرف ممرضتك قبل الزيارة", "تقرير حالة بعد كل زيارة", "فريق عربي يتابع معك"],
+        "hero_tag": "دار الأمانة",
+        "hero_stats": [("٢٤/٧", "تمريض منزلي على مدار الساعة"), ("٧ خدمات", "رعاية من المولود لكبير السن"), ("واتساب", "تقرير حالة بعد كل زيارة"), ("عربي", "فريق متابعة يتكلم لغتك")],
+        "hero_badge_t": "رعاية في البيت", "hero_badge_s": "للأم والطفل وكبار السن",
+        "why_text": "دار الأمانة للرعاية والخدمات الصحية تقدم رعاية تمريضية في البيت لأهلك، من المولود لكبير السن، ونتابع معك الحالة بوضوح بعد كل زيارة.",
         "pillars_kicker": "ليش دار الأمانة؟",
         "pillars_title": "الأمانة.. نشوفها في التفاصيل",
         "pillars": [
@@ -195,6 +199,10 @@ T = {
         "hero_title": "A nurse at home, and <span>peace of mind</span>",
         "hero_text": "Home nursing care for your loved ones. Know your nurse before she arrives, and get a patient-status report on WhatsApp after every visit.",
         "hero_points": ["Know your nurse before the visit", "A status report after every visit", "An Arabic-speaking team follows up"],
+        "hero_tag": "Dar Alamana",
+        "hero_stats": [("24/7", "Round-the-clock home nursing"), ("7 services", "From newborns to elders"), ("WhatsApp", "Status report after every visit"), ("Arabic", "Arabic-speaking follow-up team")],
+        "hero_badge_t": "Care at home", "hero_badge_s": "For mothers, children and elders",
+        "why_text": "Dar Alamana for Care & Health Services provides home nursing for your family, from newborns to elders, with clear follow-up after every visit.",
         "pillars_kicker": "Why Dar Alamana?",
         "pillars_title": "Trust, in every detail",
         "pillars": [

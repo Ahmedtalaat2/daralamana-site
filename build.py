@@ -315,39 +315,37 @@ def band(L, me):
 # ---------- pages ----------
 def p_home(L):
     t = T[L]; me = page_path(L, "index")
-    pts = "".join(f'<li><span class="ti">{ic(i)}</span><span>{p}</span></li>' for i, p in zip(("user-check", "clipboard", "phone"), t["hero_points"]))
+    stats = "".join(f'<li><b>{v}</b><span>{c}</span></li>' for v, c in t["hero_stats"])
+    dept = "".join(f'<a class="dcard reveal" href="{rel(me, page_path(L, "services/" + x["slug"]))}"><span class="dicon">{ic(x["icon"])}</span><span class="dname">{x[L]["name"]}</span>{ic("chev", "ic chev")}</a>' for x in SERVICES)
     pillars = "".join(f'<div class="pillar reveal"><span class="picon">{ic(i)}</span><h3>{h}</h3><p>{p}</p></div>' for i, h, p in t["pillars"])
     steps = "".join(f'<li class="reveal"><span class="num">{n}</span><h3>{h}</h3><p>{p}</p></li>' for n, (h, p) in zip(("١٢٣٤" if L == "ar" else "1234"), t["steps"]))
     qs = "".join(f'<li>{ic("check")}<span>{q}</span></li>' for q in t["q_list"])
     body = f'''
-<section class="hero hx">
- <img class="hx-bg" src="{rel(me, "assets/img/vitals.webp")}" alt="" width="700" height="601" aria-hidden="true">
- <div class="wrap hx-in">
-  <div class="hx-txt">
+<section class="hv">
+ <div class="hv-box">
+  <img class="hv-photo" src="{rel(me, "assets/img/hero.webp")}" alt="" width="720" height="900" fetchpriority="high">
+  <div class="hv-badge"><span class="hv-av"><i>{ic("baby")}</i><i>{ic("pregnant")}</i><i>{ic("heart-hand")}</i></span><span><b>{t["hero_badge_t"]}</b><small>{t["hero_badge_s"]}</small></span><span class="hv-tick">{ic("check")}</span></div>
+  <div class="hv-in">
    <h1>{t["hero_title"]}</h1>
-   <p class="lead">{t["hero_text"]}</p>
-   <div class="ctas hx-ctas">
+   <div class="hv-sub"><span class="hv-tag">{t["hero_tag"]}</span><p>{t["hero_text"]}</p></div>
+   <div class="ctas hv-ctas">
     <a class="btn btn-light btn-lg" href="{rel(me, page_path(L, "request"))}" data-track="request_click">{t["cta_request"]}{ic("chev", "ic chev")}</a>
     <a class="btn btn-wa btn-lg" href="{wa_link(L)}" target="_blank" rel="noopener" data-track="whatsapp">{WA}{t["cta_whatsapp"]}</a>
    </div>
-   <ul class="hx-trust">{pts}</ul>
   </div>
-  <div class="hx-media">
-   <div class="hx-frame">
-    <img src="{rel(me, "assets/img/hero.webp")}" alt="" width="720" height="900" fetchpriority="high"><img src="{rel(me, "assets/img/vitals.webp")}" alt="" width="700" height="601" loading="lazy">
-   </div>
-   <div class="hx-float hx-f1"><span class="fi">{ic("message")}</span><span><b>{t["float1_t"]}</b><small>{t["float1_s"]}</small></span></div>
-   <div class="hx-float hx-f2"><span class="fi">{ic("user-check")}</span><span><b>{t["float2_t"]}</b><small>{t["float2_s"]}</small></span></div>
-  </div>
+  <ul class="hv-stats">{stats}</ul>
  </div>
 </section>
-<section class="sec"><div class="wrap">
- <header class="shead reveal"><p class="kicker">{t["pillars_kicker"]}</p><h2>{t["pillars_title"]}</h2></header>
+<section class="sec why"><div class="wrap">
+ <div class="why-top">
+  <div class="why-txt reveal"><p class="kicker">{t["pillars_kicker"]}</p><h2>{t["pillars_title"]}</h2><p>{t["why_text"]}</p></div>
+  <div class="why-img reveal"><img src="{rel(me, "assets/img/vitals.webp")}" alt="" width="700" height="601" loading="lazy"></div>
+ </div>
  <div class="pillars">{pillars}</div>
 </div></section>
 <section class="sec sec-soft"><div class="wrap">
  <header class="shead reveal"><p class="kicker">{t["services_kicker"]}</p><h2>{t["services_title"]}</h2><p>{t["services_text"]}</p></header>
- {services_grid(L, me)}
+ <div class="dgrid">{dept}</div>
 </div></section>
 <section class="sec"><div class="wrap qbox reveal">
  <div class="qimg"><img src="{rel(me, "assets/img/family.webp")}" alt="" width="520" height="650" loading="lazy"></div>
