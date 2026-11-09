@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """يبني موقع دار الأمانة كملفات HTML ثابتة (عربي في الجذر، إنجليزي في /en/)."""
+import urllib.parse
 import json, os, re, shutil, sys, glob, datetime
 from html import escape as e
 from content import CONFIG as C, SERVICES, FAQ, T, PRIVACY
@@ -213,6 +214,8 @@ def footer(L, key):
     links += f'<li><a href="{rel(me, page_path(L, "privacy"))}">{t["privacy"]}</a></li>'
     soc = "".join(f'<a href="{C[n]}" target="_blank" rel="noopener" aria-label="{n}">{SOCIAL[n]}</a>' for n in ("instagram", "tiktok", "snapchat", "facebook"))
     year = datetime.date.today().year
+    dev_name = "أحمد الجمل" if L == "ar" else "Ahmed Al Gamal"
+    dev_msg = urllib.parse.quote("مرحباً أحمد، تواصلت معك من موقع دار الأمانة 👋" if L == "ar" else "Hi Ahmed, I'm contacting you from the Dar Alamana website 👋")
     return f'''</main>
 <footer class="site-footer">
  <div class="wrap fgrid">
@@ -232,7 +235,7 @@ def footer(L, key):
    </ul>
   </div>
  </div>
- <div class="wrap fbottom"><div class="sig"><span>© {year} <bdi>أحمد الجمل</bdi> | <bdi dir="ltr">Ahmed Al Gamal</bdi><span class="rt"> · {t["rights"]}</span></span><a class="dev-wa" href="https://wa.me/971507761628" target="_blank" rel="noopener" aria-label="WhatsApp Ahmed Al Gamal">{WA}<span dir="ltr">+971 50 776 1628</span></a></div></div>
+ <div class="wrap fbottom"><div class="sig"><span>© {year} {dev_name}<span class="rt"> · {t["rights"]}</span></span><a class="dev-wa" href="https://wa.me/971507761628?text={dev_msg}" target="_blank" rel="noopener" aria-label="WhatsApp {dev_name}">{WA}<span dir="ltr">+971 50 776 1628</span></a></div></div>
 </footer>
 <div class="dock" role="group" aria-label="{t["footer_contact"]}">
  <a class="dock-wa" href="{wa_link(L)}" target="_blank" rel="noopener" data-track="whatsapp" aria-label="{t["cta_whatsapp"]}" title="{t["cta_whatsapp"]}">{WA}</a>

@@ -658,3 +658,43 @@ html[lang=en] .hx h1{font-size:min(3.1rem,5.8cqi)}
   .hx-trust li{white-space:normal}
 }
 @media (min-width:641px) and (max-width:960px){.hx-trust{justify-content:center;gap:32px}}
+
+/* ================= v3.3 (2026-11-09) ================= */
+/* hero: smaller photo, bigger headline */
+@media (min-width:961px){.hx-in{grid-template-columns:1.4fr .6fr;gap:56px}}
+@media (min-width:961px){.hx-txt{max-width:720px}}
+.hx h1{font-size:min(3.6rem,6.6cqi)}
+html[lang=en] .hx h1{font-size:min(3.3rem,5.8cqi)}
+.hx .lead{font-size:1.22rem;max-width:640px}
+.hx-media{max-width:360px}
+.hx-float{min-width:0;max-width:230px;padding:10px 12px;gap:10px}
+.hx-float .fi{width:36px;height:36px}
+.hx-float b{font-size:.88rem}.hx-float small{font-size:.74rem}
+.hx-f1{inset-inline-start:-30px;bottom:26px}
+.hx-f2{inset-inline-end:-24px;top:26px}
+@media (max-width:960px){.hx-media{max-width:320px}}
+@media (max-width:640px){
+  .hx-in{gap:30px;padding-block:30px 44px}
+  .hx-media{max-width:230px}
+  .hx-media::before{inset:-9px -9px 14px 14px}
+  [dir=rtl] .hx-media::before{inset:-9px 14px 14px -9px}
+  .hx-frame{border-radius:24px}
+  .hx-float{max-width:165px;padding:6px 9px;gap:6px;border-radius:12px}
+  .hx-float .fi{width:26px;height:26px;border-radius:8px}
+  .hx-float .fi .ic{width:14px;height:14px}
+  .hx-float b{font-size:.7rem}.hx-float small{font-size:.6rem}
+  .hx-f1{inset-inline-start:-16px;bottom:14px}
+  .hx-f2{inset-inline-end:-16px;top:14px}
+}
+/* footer: brand purple from the designs, lighter */
+.site-footer{background:linear-gradient(160deg,#3B2870 0%,#33225F 55%,#2B1D55 100%);color:#DDD3EE}
+.site-footer a{color:#DDD3EE}
+.fbottom{border-top-color:rgba(255,255,255,.16);color:#CFC4E3}
+/* signature: plain link, no pill */
+.dev-wa{background:none;padding:0;border-radius:0;color:#7FE6DA!important;font-weight:600;gap:6px}
+.dev-wa:hover{filter:none;text-decoration:underline}
+@media (max-width:640px){.sig .rt{display:inline}.dev-wa{padding:0}}
+.hx-float{max-width:265px}
+@media (max-width:640px){.hx-float{max-width:185px}.hx-float small{white-space:nowrap}}
+@media (max-width:640px){.ccards>.ccard:nth-child(n+3){grid-column:1/-1}}
+@media (max-width:640px){.hx .lead{font-size:.95rem;line-height:1.85}}
