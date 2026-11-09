@@ -1,0 +1,53 @@
+# لوحة تحكم المدونة (Sveltia CMS). الدخول بحساب GitHub.
+backend:
+  name: github
+  repo: Ahmedtalaat2/daralamana-site
+  branch: main
+  commit_messages:
+    create: "مقال جديد: {{slug}}"
+    update: "تعديل مقال: {{slug}}"
+    delete: "حذف مقال: {{slug}}"
+    uploadMedia: "رفع صورة: {{path}}"
+
+media_folder: static/assets/img/blog
+public_folder: /assets/img/blog
+site_url: /
+display_url: /
+
+collections:
+  - name: blog_ar
+    label: "مقالات عربي"
+    label_singular: "مقال"
+    folder: content/blog/ar
+    create: true
+    format: json
+    extension: json
+    identifier_field: title
+    slug: "{{fields.slug}}"
+    sortable_fields: [date, title]
+    summary: "{{title}} — {{date}}"
+    fields: &fields
+      - { name: title, label: "العنوان", widget: string }
+      - name: slug
+        label: "رابط المقال (إنجليزي صغير وشرطات فقط، مثال: elderly-care-tips)"
+        widget: string
+        pattern: ['^[a-z0-9-]+$', "حروف إنجليزية صغيرة وأرقام وشرطات فقط"]
+        hint: "استخدم نفس الرابط للمقال العربي ونسخته الإنجليزية عشان جوجل يربطهم ببعض."
+      - { name: description, label: "وصف قصير (يظهر في جوجل، ١٥٠ حرف تقريباً)", widget: text }
+      - { name: date, label: "تاريخ النشر", widget: datetime, format: "YYYY-MM-DD", time_format: false }
+      - { name: image, label: "صورة المقال", widget: image, required: false }
+      - { name: image_alt, label: "وصف الصورة (لجوجل)", widget: string, required: false }
+      - { name: body, label: "المقال", widget: markdown, buttons: [bold, italic, link, heading-two, heading-three, quote, bulleted-list, numbered-list] }
+      - { name: draft, label: "مسودة (ما تنشر)", widget: boolean, default: false, required: false }
+  - name: blog_en
+    label: "English articles"
+    label_singular: "Article"
+    folder: content/blog/en
+    create: true
+    format: json
+    extension: json
+    identifier_field: title
+    slug: "{{fields.slug}}"
+    sortable_fields: [date, title]
+    summary: "{{title}} — {{date}}"
+    fields: *fields
