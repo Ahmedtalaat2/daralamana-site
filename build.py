@@ -561,6 +561,10 @@ def write(path, html):
 def main():
     if os.path.exists(OUT): shutil.rmtree(OUT)
     shutil.copytree(os.path.join(SRC, "static"), OUT)
+    cfg = os.path.join(OUT, "admin", "config.yml")
+    if os.path.exists(cfg):  # رابط الموقع الكامل للوحة التحكم
+        y = open(cfg, encoding="utf-8").read().replace("site_url: /\n", f'site_url: {C["base_url"]}/\n').replace("display_url: /\n", f'display_url: {C["base_url"]}/\n')
+        open(cfg, "w", encoding="utf-8").write(y)
     keys = []
     for L in ("ar", "en"):
         pages = {"index": p_home(L), "services": p_services(L), "about": p_about(L), "request": p_request(L),
