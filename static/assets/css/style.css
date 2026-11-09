@@ -916,3 +916,8 @@ html[lang=en] .hv h1{font-size:min(3.6rem,5.9cqi)}
   .band .ctas{flex-wrap:nowrap;gap:8px;justify-content:center}
   .band .ctas .btn{flex:1 1 0;min-width:0;min-height:44px;padding:.35em .6em;font-size:.92rem}
 }
+/* v4.3: space between closing band and footer on every page; fainter card pattern */
+.band{margin-bottom:56px!important}
+@media (max-width:640px){.band{margin-bottom:36px!important}}
+.pillar::after,.scard::after,.dcard::after,.ccard::after,.steps li::after,.bcard::after,.wizard::after{opacity:.05}
+.ccard-wa::after{opacity:.08}
