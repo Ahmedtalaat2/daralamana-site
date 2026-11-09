@@ -69,6 +69,11 @@ def has_lang(x, key):
     return not key.startswith("blog/") or key[5:] in POSTS[x]
 
 PAGE_OG = {}
+import hashlib
+def ver(path):
+    try: return hashlib.md5(open(os.path.join(SRC, "static", path), "rb").read()).hexdigest()[:8]
+    except OSError: return "1"
+
 
 ICONS = {
  "hospital": '<path d="M12 6v4M14 14h-4M14 18h-4M14 8h-4"/><path d="M18 12h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h2"/><path d="M18 22V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v18"/>',
@@ -163,11 +168,11 @@ def head(L, key, title, desc, schema):
 <link rel="apple-touch-icon" href="{root}assets/img/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{root}assets/css/style.css">
+<link rel="stylesheet" href="{root}assets/css/style.css?v={ver("assets/css/style.css")}">
 {sch}
 <script>document.documentElement.classList.add("js")</script>
-<script src="{root}assets/js/config.js"></script>
-<script src="{root}assets/js/tracking.js"></script>
+<script src="{root}assets/js/config.js?v={ver("assets/js/config.js")}"></script>
+<script src="{root}assets/js/tracking.js?v={ver("assets/js/tracking.js")}"></script>
 </head>'''
 
 def header(L, key):
@@ -181,7 +186,7 @@ def header(L, key):
 <a class="skip" href="#main">{t["skip"]}</a>
 <header class="site-header">
  <div class="wrap hdr">
-  <a class="logo" href="{rel(me, page_path(L, "index"))}" aria-label="{e(t["brand_full"])}"><img src="{rel(me, "assets/img/" + logo)}" alt="{e(t["brand_full"])}" width="212" height="78"></a>
+  <a class="logo" href="{rel(me, page_path(L, "index"))}" aria-label="{e(t["brand_full"])}"><picture><source media="(max-width:640px)" srcset="{rel(me, "assets/img/logo-icon.png")}"><img src="{rel(me, "assets/img/" + logo)}" alt="{e(t["brand_full"])}" width="212" height="78"></picture></a>
   <nav class="nav" id="nav" aria-label="{t["menu"]}"><ul>{links}</ul>
    <a class="btn btn-teal nav-cta" href="{rel(me, page_path(L, "request"))}">{t["cta_request"]}</a>
   </nav>
@@ -227,13 +232,13 @@ def footer(L, key):
    </ul>
   </div>
  </div>
- <div class="wrap fbottom"><span>© {year} {t["brand_full"]}. {t["rights"]}.</span></div>
+ <div class="wrap fbottom"><span>© {year} <bdi>أحمد الجمل</bdi> | <bdi dir="ltr">Ahmed Al Gamal</bdi> · {t["rights"]}</span><a class="dev-wa" href="https://wa.me/971507761628" target="_blank" rel="noopener" aria-label="WhatsApp Ahmed Al Gamal">{WA}<span dir="ltr">+971 50 776 1628</span></a></div>
 </footer>
 <div class="dock" role="group" aria-label="{t["footer_contact"]}">
  <a class="dock-wa" href="{wa_link(L)}" target="_blank" rel="noopener" data-track="whatsapp" aria-label="{t["cta_whatsapp"]}" title="{t["cta_whatsapp"]}">{WA}</a>
  <a class="dock-call" href="tel:{C["phone"]}" data-track="call" aria-label="{t["cta_call"]}" title="{t["cta_call"]}">{ic("phone")}</a>
 </div>
-<script src="{rel(me, "assets/js/main.js")}" defer></script>
+<script src="{rel(me, "assets/js/main.js")}?v={ver("assets/js/main.js")}" defer></script>
 </body>
 </html>'''
 
@@ -301,7 +306,7 @@ def faq_list(L, n=None):
 
 def band(L, me):
     t = T[L]
-    return f'''<section class="band grid-bg"><div class="wrap band-in reveal">
+    return f'''<section class="band grid-bg"><img class="band-bg" src="{rel(me, "assets/img/nurses.webp")}" alt="" loading="lazy" aria-hidden="true"><div class="wrap band-in reveal">
  <div><h2>{t["band_title"]}</h2><p>{t["band_text"]}</p></div>{cta_buttons(L, me)}</div></section>'''
 
 # ---------- pages ----------
@@ -462,10 +467,10 @@ def p_faq(L):
 def contact_block(L, me):
     t = T[L]
     return f'''<div class="ccards">
-  <a class="ccard ccard-wa reveal" href="{wa_link(L)}" target="_blank" rel="noopener" data-track="whatsapp">{WA}<b>{t["c_whatsapp"]}</b><span dir="ltr">{C["whatsapp_display"]}</span></a>
-  <a class="ccard reveal" href="tel:{C["phone"]}" data-track="call">{ic("phone")}<b>{t["c_phone"]}</b><span dir="ltr">{C["phone_display"]}</span></a>
-  <a class="ccard reveal" href="mailto:{C["email"]}">{ic("mail")}<b>{t["c_email"]}</b><span>{C["email"]}</span></a>
-  <div class="ccard reveal">{ic("pin")}<b>{t["c_address"]}</b><span>{C["city_" + L]}</span></div>
+  <a class="ccard ccard-wa reveal" href="{wa_link(L)}" target="_blank" rel="noopener" data-track="whatsapp">{WA}<span class="sr">{t["c_whatsapp"]}</span><span dir="ltr">{C["whatsapp_display"]}</span></a>
+  <a class="ccard reveal" href="tel:{C["phone"]}" data-track="call">{ic("phone")}<span class="sr">{t["c_phone"]}</span><span dir="ltr">{C["phone_display"]}</span></a>
+  <a class="ccard reveal" href="mailto:{C["email"]}">{ic("mail")}<span class="sr">{t["c_email"]}</span><span>{C["email"]}</span></a>
+  <div class="ccard reveal">{ic("pin")}<span class="sr">{t["c_address"]}</span><span>{C["city_" + L]}</span></div>
  </div>
  <div class="mapbox reveal"><iframe title="map" src="https://www.google.com/maps?q=Doha,Qatar&hl={L}&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>'''
 
