@@ -481,7 +481,19 @@ def p_privacy(L):
 
 def p_404(L):
     t = T[L]; me = page_path(L, "404")
-    body = f'<section class="phero grid-bg tall"><div class="wrap"><h1>{t["404_title"]}</h1><p>{t["404_text"]}</p>{cta_buttons(L, me)}</div></section>'
+    en = T["en"]
+    body = f'''<section class="nf grid-bg"><div class="wrap nf-in">
+ <div class="nf-code" aria-hidden="true"><span>4</span><span class="nf-heart">{ic("heart-hand")}</span><span>4</span></div>
+ <svg class="nf-pulse" viewBox="0 0 600 60" preserveAspectRatio="none" aria-hidden="true"><path d="M0 30h210l18-22 22 44 20-38 16 16h314"/></svg>
+ <h1>{t["404_title"]}</h1>
+ <p>{t["404_text"]}</p>
+ <div class="ctas nf-ctas">
+  <a class="btn btn-teal btn-lg" href="{rel(me, page_path(L, "index"))}">{t["nav"][0][1]}</a>
+  <a class="btn btn-ghost-light btn-lg" href="{rel(me, page_path(L, "services"))}">{dict(t["nav"])["services"]}</a>
+  <a class="btn btn-wa btn-lg" href="{wa_link(L)}" target="_blank" rel="noopener" data-track="whatsapp">{WA}{t["cta_whatsapp"]}</a>
+ </div>
+ <p class="nf-en" lang="en" dir="ltr">{en["404_title"]}. <a href="{rel(me, page_path("en", "index"))}">Go to the English site</a></p>
+</div></section>'''
     html = page(L, "404", t["404_title"], t["404_text"], body)
     return html.replace('<meta name="description"', '<meta name="robots" content="noindex"><meta name="description"', 1)
 
