@@ -3,10 +3,10 @@
 
 CONFIG = {
     "base_url": "https://daralamana.qa",  # الدومين الحقيقي (أو حطه في متغير SITE_URL في Coolify)
-    "whatsapp": "97400000000",          # رقم الواتساب بدون + أو مسافات
-    "whatsapp_display": "+974 XXXX XXXX",
-    "phone": "+97400000000",
-    "phone_display": "+974 XXXX XXXX",
+    "whatsapp": "97430530001",          # رقم الواتساب بدون + أو مسافات
+    "whatsapp_display": "+974 3053 0001",
+    "phone": "+97430530001",
+    "phone_display": "+974 3053 0001",
     "email": "info@daralamana.qa",
     "handle": "@daralamana.qa",
     "instagram": "https://instagram.com/daralamana.qa",
@@ -139,7 +139,8 @@ T = {
         "q_list": ["أعرف مين بتدخل بيتي قبل الزيارة؟", "بيوصلني تقرير عن حالة أهلي بعد كل زيارة؟", "في أحد يتابع معي بالعربي ويحترم عاداتنا؟"],
         "q_answer": "في دار الأمانة.. الجواب على الثلاثة: نعم.",
         "faq_title": "أسئلة شائعة", "faq_more": "كل الأسئلة",
-        "band_title": "محتاج ممرضة لأهلك؟", "band_text": "كلمنا الحين ونرتب لك كل شي بهدوء.",
+        "band_title": "لأن راحة أهلك تستحق أفضل رعاية", "band_text": "فريق دار الأمانة جاهز يسمعك ويرتب لك الرعاية المناسبة في البيت أو المستشفى.",
+        "float1_t": "تقرير حالة المريض", "float1_s": "يوصلك على الواتساب بعد كل زيارة", "float2_t": "تعرف ممرضتك", "float2_s": "الاسم والخبرة قبل الزيارة", "request_kicker": "اطلب بسهولة",
         "footer_about": "رعاية تمريضية منزلية في قطر، مبنية على الأمانة والوضوح مع الأهل.",
         "footer_links": "روابط", "footer_contact": "تواصل", "footer_services": "خدماتنا",
         "privacy": "سياسة الخصوصية", "rights": "جميع الحقوق محفوظة",
@@ -215,7 +216,8 @@ T = {
         "q_list": ["Will I know who is entering my home before the visit?", "Will I get a report on my loved one after every visit?", "Is there someone who follows up with me in Arabic and respects our customs?"],
         "q_answer": "At Dar Alamana, the answer to all three is: yes.",
         "faq_title": "Frequently asked questions", "faq_more": "All questions",
-        "band_title": "Need a nurse for your family?", "band_text": "Talk to us now and we'll arrange everything calmly.",
+        "band_title": "Because your family deserves the best care", "band_text": "The Dar Alamana team is ready to listen and arrange the right care at home or in hospital.",
+        "float1_t": "Patient-status report", "float1_s": "On WhatsApp after every visit", "float2_t": "Know your nurse", "float2_s": "Name and experience before the visit", "request_kicker": "Easy booking",
         "footer_about": "Home nursing care in Qatar, built on trust and clarity with families.",
         "footer_links": "Links", "footer_contact": "Contact", "footer_services": "Services",
         "privacy": "Privacy policy", "rights": "All rights reserved",

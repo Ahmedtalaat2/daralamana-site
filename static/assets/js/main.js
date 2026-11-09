@@ -81,6 +81,8 @@
     if (!el) return "";
     return (el.dataset && el.dataset.label) || el.value.trim();
   }
+  var started = false;
+  f.addEventListener("change", function () { if (!started && window.track) { started = true; window.track("form_start", { page: location.pathname }); } });
   f.addEventListener("submit", function (ev) {
     ev.preventDefault();
     if (!valid(step)) return;
@@ -90,6 +92,13 @@
     });
     var url = "https://wa.me/" + f.dataset.wa + "?text=" + encodeURIComponent(lines.join("\n"));
     if (window.track) window.track("lead", { service: f.querySelector("[name=service]:checked").value });
+    // n8n / CRM: يرسل الطلب لو فيه رابط Webhook في config.js (بدون أي مفاتيح سرية في الموقع)
+    var hook = (window.SITE_CONFIG || {}).N8N_LEAD_WEBHOOK;
+    if (hook) {
+      var data = { source: "website", lang: document.documentElement.lang, page: location.pathname, sent_at: new Date().toISOString() };
+      ["service", "who", "area", "lang", "when", "name", "phone", "notes"].forEach(function (k) { data[k] = val(k); });
+      try { fetch(hook, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data), keepalive: true }).catch(function () {}); } catch (e) {}
+    }
     steps.forEach(function (s) { s.hidden = true; });
     f.querySelector(".wz-nav").hidden = true; f.querySelector(".wz-top").hidden = true;
     var done = f.querySelector(".wz-done"); done.hidden = false;

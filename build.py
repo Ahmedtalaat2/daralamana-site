@@ -307,22 +307,28 @@ def band(L, me):
 # ---------- pages ----------
 def p_home(L):
     t = T[L]; me = page_path(L, "index")
-    pts = "".join(f'<li>{ic("check")}{p}</li>' for p in t["hero_points"])
+    pts = "".join(f'<li><span class="ti">{ic(i)}</span><span>{p}</span></li>' for i, p in zip(("user-check", "clipboard", "phone"), t["hero_points"]))
     pillars = "".join(f'<div class="pillar reveal"><span class="picon">{ic(i)}</span><h3>{h}</h3><p>{p}</p></div>' for i, h, p in t["pillars"])
     steps = "".join(f'<li class="reveal"><span class="num">{n}</span><h3>{h}</h3><p>{p}</p></li>' for n, (h, p) in zip(("١٢٣٤" if L == "ar" else "1234"), t["steps"]))
     qs = "".join(f'<li>{ic("check")}<span>{q}</span></li>' for q in t["q_list"])
     body = f'''
-<section class="hero">
- <div class="hero-bg" aria-hidden="true">
-  <img src="{rel(me, "assets/img/hero.webp")}" alt="" fetchpriority="high"><img src="{rel(me, "assets/img/nurses.webp")}" alt="" loading="lazy"><img src="{rel(me, "assets/img/vitals.webp")}" alt="" loading="lazy"><img src="{rel(me, "assets/img/family.webp")}" alt="" loading="lazy"><img src="{rel(me, "assets/img/phone.webp")}" alt="" loading="lazy">
- </div>
- <div class="wrap hero-in">
-  <div class="hero-txt glass-dark">
-   <p class="kicker">{t["hero_kicker"]}</p>
+<section class="hero hx">
+ <div class="wrap hx-in">
+  <div class="hx-txt">
    <h1>{t["hero_title"]}</h1>
    <p class="lead">{t["hero_text"]}</p>
-   {cta_buttons(L, me)}
-   <ul class="hpoints">{pts}</ul>
+   <div class="ctas hx-ctas">
+    <a class="btn btn-light btn-lg" href="{rel(me, page_path(L, "request"))}" data-track="request_click">{t["cta_request"]}{ic("chev", "ic chev")}</a>
+    <a class="btn btn-wa btn-lg" href="{wa_link(L)}" target="_blank" rel="noopener" data-track="whatsapp">{WA}{t["cta_whatsapp"]}</a>
+   </div>
+   <ul class="hx-trust">{pts}</ul>
+  </div>
+  <div class="hx-media">
+   <div class="hx-frame">
+    <img src="{rel(me, "assets/img/hero.webp")}" alt="" width="720" height="900" fetchpriority="high"><img src="{rel(me, "assets/img/nurses.webp")}" alt="" width="620" height="775" loading="lazy"><img src="{rel(me, "assets/img/vitals.webp")}" alt="" width="700" height="601" loading="lazy">
+   </div>
+   <div class="hx-float hx-f1"><span class="fi">{ic("message")}</span><span><b>{t["float1_t"]}</b><small>{t["float1_s"]}</small></span></div>
+   <div class="hx-float hx-f2"><span class="fi">{ic("user-check")}</span><span><b>{t["float2_t"]}</b><small>{t["float2_s"]}</small></span></div>
   </div>
  </div>
 </section>
@@ -344,7 +350,7 @@ def p_home(L):
  <ol class="steps">{steps}</ol>
 </div></section>
 <section class="sec sec-soft" id="request"><div class="wrap narrow">
- <header class="shead reveal"><p class="kicker">{t["hero_kicker"]}</p><h2>{t["request_title"]}</h2><p>{t["request_text"]}</p></header>
+ <header class="shead reveal"><p class="kicker">{t["request_kicker"]}</p><h2>{t["request_title"]}</h2><p>{t["request_text"]}</p></header>
  {wizard(L)}
 </div></section>
 {latest_posts(L, me)}
@@ -353,7 +359,8 @@ def p_home(L):
  {faq_list(L, 4)}
  <p class="center"><a class="btn btn-ghost" href="{rel(me, page_path(L, "faq"))}">{t["faq_more"]}</a></p>
 </div></section>
-<section class="sec sec-soft" id="contact"><div class="wrap contact">
+{band(L, me)}
+<section class="sec" id="contact"><div class="wrap contact">
  <header class="shead reveal"><h2>{t["contact_title"]}</h2><p>{t["contact_text"]}</p></header>
  {contact_block(L, me)}
 </div></section>'''
