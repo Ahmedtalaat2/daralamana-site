@@ -5,7 +5,38 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>لوحة التحكم | دار الأمانة</title>
-<link rel="icon" type="image/png" href="/assets/img/favicon.png">
+<link rel="icon" type="image/png" href="../assets/img/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Dar Alamana brand theme for Sveltia CMS */
+  :root, :root[data-theme=light], :root[data-theme=dark] {
+    --sui-base-hue: 262 !important;
+    --sui-font-family-default: "IBM Plex Sans Arabic", system-ui, sans-serif !important;
+    --sui-control-font-family: "IBM Plex Sans Arabic", system-ui, sans-serif !important;
+    --sui-textbox-font-family: "IBM Plex Sans Arabic", system-ui, sans-serif !important;
+  }
+  :root, :root[data-theme=light] {
+    --sui-primary-accent-color: #5A3E98 !important;
+    --sui-primary-accent-color-light: #6B4DB0 !important;
+    --sui-primary-accent-color-dark: #3B2870 !important;
+    --sui-primary-accent-color-text: #5A3E98 !important;
+    --sui-primary-accent-color-inverted: #ffffff !important;
+    --sui-focus-ring-color: rgba(23,184,166,.55) !important;
+  }
+  :root[data-theme=dark] {
+    --sui-primary-accent-color: #7B5CC4 !important;
+    --sui-primary-accent-color-light: #8E70D3 !important;
+    --sui-primary-accent-color-dark: #5A3E98 !important;
+    --sui-primary-accent-color-text: #CAB1EA !important;
+  }
+  /* branded backdrop behind the sign-in screen and while loading */
+  html, body { background: #fff; }
+  body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background: radial-gradient(600px 460px at 0% 10%, rgba(155,120,215,.16), transparent 70%),
+                radial-gradient(560px 440px at 100% 90%, rgba(23,184,166,.10), transparent 70%); }
+</style>
 </head>
 <body>
 <script src="https://unpkg.com/@sveltia/cms/dist/sveltia-cms.js"></script>

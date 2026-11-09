@@ -13,6 +13,10 @@ media_folder: static/assets/img/blog
 public_folder: /assets/img/blog
 site_url: /
 display_url: /
+app_title: "لوحة تحكم دار الأمانة"
+logo:
+  src: /assets/img/logo-icon.png
+  show_in_header: true
 
 collections:
   - name: blog_ar

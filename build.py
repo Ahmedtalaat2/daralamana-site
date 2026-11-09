@@ -596,7 +596,7 @@ def main():
     shutil.copytree(os.path.join(SRC, "static"), OUT)
     cfg = os.path.join(OUT, "admin", "config.yml")
     if os.path.exists(cfg):  # رابط الموقع الكامل للوحة التحكم
-        y = open(cfg, encoding="utf-8").read().replace("site_url: /\n", f'site_url: {C["base_url"]}/\n').replace("display_url: /\n", f'display_url: {C["base_url"]}/\n')
+        y = open(cfg, encoding="utf-8").read().replace("site_url: /\n", f'site_url: {C["base_url"]}/\n').replace("display_url: /\n", f'display_url: {C["base_url"]}/\n').replace("  src: /assets/", f'  src: {C["base_url"]}/assets/')
         open(cfg, "w", encoding="utf-8").write(y)
     keys = []
     for L in ("ar", "en"):
