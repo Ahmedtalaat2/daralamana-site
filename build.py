@@ -452,8 +452,9 @@ def wizard(L):
   <p class="hint">{ic("shield")}{t["f_hint"]}</p>
   <label class="consent"><input type="checkbox" name="consent" required><span>{t["f_consent"]}</span></label>
   <p class="err" hidden></p></fieldset>
- <div class="wz-done" hidden><span class="done-ic">{ic("check")}</span><h2>{t["f_done_title"]}</h2><p>{t["f_done_text"]}</p><a class="btn btn-wa btn-lg wz-open" href="#" target="_blank" rel="noopener">{WA}{t["cta_whatsapp"]}</a></div>
- <div class="wz-nav"><button type="button" class="btn btn-ghost btn-lg wz-back" hidden>{t["f_back"]}</button><button type="button" class="btn btn-teal btn-lg wz-next">{t["f_next"]}</button><button type="submit" class="btn btn-wa btn-lg wz-send" hidden>{WA}{t["f_send"]}</button></div>
+ <div class="wz-done" hidden role="status"><span class="done-ic">{ic("check")}</span><h2>{t["f_done_title"]}</h2><p>{t["f_done_text"]}</p></div>
+ <div class="wz-fail" hidden role="alert"><h2>{t["f_fail_title"]}</h2><p>{t["f_fail_text"]}</p><a class="btn btn-wa btn-lg wz-open" href="#" target="_blank" rel="noopener" data-track="whatsapp">{WA}{t["cta_whatsapp"]}</a></div>
+ <div class="wz-nav"><button type="button" class="btn btn-ghost btn-lg wz-back" hidden>{t["f_back"]}</button><button type="button" class="btn btn-teal btn-lg wz-next">{t["f_next"]}</button><button type="submit" class="btn btn-teal btn-lg wz-send" hidden data-sending="{e(t["f_sending"])}">{t["f_send"]}</button></div>
 </form>'''
 
 def p_request(L):

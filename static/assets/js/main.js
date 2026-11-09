@@ -91,18 +91,32 @@
       var v = val(k); if (v) lines.push("• " + labels[k] + ": " + v);
     });
     var url = "https://wa.me/" + f.dataset.wa + "?text=" + encodeURIComponent(lines.join("\n"));
-    if (window.track) window.track("lead", { service: f.querySelector("[name=service]:checked").value });
-    // n8n / CRM: يرسل الطلب لو فيه رابط Webhook في config.js (بدون أي مفاتيح سرية في الموقع)
     var hook = (window.SITE_CONFIG || {}).N8N_LEAD_WEBHOOK;
-    if (hook) {
-      var data = { source: "website", lang: document.documentElement.lang, page: location.pathname, sent_at: new Date().toISOString() };
-      ["service", "who", "area", "lang", "when", "name", "phone", "notes"].forEach(function (k) { data[k] = val(k); });
-      try { fetch(hook, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data), keepalive: true }).catch(function () {}); } catch (e) {}
+    var data = { source: "website", lang_site: document.documentElement.lang, page: location.pathname, sent_at: new Date().toISOString() };
+    ["service", "who", "area", "lang", "when", "name", "phone", "notes"].forEach(function (k) { data[k] = val(k); });
+    var btn = f.querySelector(".wz-send"), label = btn.textContent;
+    btn.disabled = true; btn.textContent = btn.dataset.sending || "...";
+    function finish(ok) {
+      btn.disabled = false; btn.textContent = label;
+      if (ok) {
+        steps.forEach(function (s) { s.hidden = true; });
+        f.querySelector(".wz-nav").hidden = true; f.querySelector(".wz-top").hidden = true;
+        f.querySelector(".wz-fail").hidden = true;
+        f.querySelector(".wz-done").hidden = false;
+        if (window.track) window.track("lead", { service: data.service, channel: "form" });
+      } else {
+        var fail = f.querySelector(".wz-fail"); fail.hidden = false;
+        fail.querySelector(".wz-open").href = url;
+        fail.scrollIntoView({ behavior: "smooth", block: "center" }); return;
+      }
+      f.scrollIntoView({ behavior: "smooth", block: "center" });
     }
-    steps.forEach(function (s) { s.hidden = true; });
-    f.querySelector(".wz-nav").hidden = true; f.querySelector(".wz-top").hidden = true;
-    var done = f.querySelector(".wz-done"); done.hidden = false;
-    done.querySelector(".wz-open").href = url;
-    window.open(url, "_blank");
+    // يرسل الطلب لـ n8n (بدون أي مفاتيح سرية في الموقع)، ويأكد للعميل بس لما السيرفر يرد بنجاح
+    if (!hook || !window.fetch) { finish(false); return; }
+    var ctrl = window.AbortController ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 12000);
+    fetch(hook, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data), signal: ctrl ? ctrl.signal : undefined })
+      .then(function (r) { clearTimeout(timer); finish(r.ok); })
+      .catch(function () { clearTimeout(timer); finish(false); });
   });
 })();

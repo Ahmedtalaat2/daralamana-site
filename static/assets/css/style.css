@@ -868,3 +868,51 @@ html[lang=en] .hv h1{font-size:min(3.6rem,5.9cqi)}
   .hv-sub p{font-size:min(.9rem,3.3vw);line-height:1.75;max-width:none}
 }
 .dcard .chev{display:none!important}
+
+/* ================= v4.2 (2026-11-09) ================= */
+/* card background: medical pattern at 10% */
+.wizard{position:relative;isolation:isolate;overflow:hidden}
+.pillar::after,.scard::after,.dcard::after,.ccard::after,.steps li::after,.bcard::after,.wizard::after{content:"";position:absolute;z-index:-1;pointer-events:none;
+  inset:0!important;width:auto!important;height:auto!important;background:url(../img/cards-bg.webp) center/cover no-repeat!important;opacity:.1}
+.ccard-wa::after{opacity:.14;mix-blend-mode:screen}
+
+/* steps: horizontal cards, 2 per row, lower height, one-line descriptions */
+.steps{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.steps li{display:grid;grid-template-columns:auto 1fr;column-gap:16px;align-items:center;padding:18px 22px}
+.steps li .num{grid-row:span 2;margin:0}
+.steps h3{margin:0 0 .15em;font-size:1.05rem}
+.steps p{font-size:.93rem;line-height:1.7}
+@media (max-width:760px){.steps{grid-template-columns:1fr;gap:10px}.steps li{padding:14px 16px;column-gap:12px}.steps p{font-size:.86rem}}
+
+/* request form: compact on phones, full-width buttons sized like the options */
+.wz-fail{text-align:center;padding:18px;margin-top:18px;border:1.5px solid #F3C9C9;border-radius:16px;background:#FFF7F7}
+.wz-fail h2{font-size:1.15rem;margin:0 0 .3em;color:var(--v4-ink)}
+.wz-fail p{color:var(--muted);margin:0 0 14px}
+.wz-send[disabled]{opacity:.7;cursor:wait}
+@media (max-width:640px){
+  .wizard{padding:16px 14px}
+  .wz-top{margin-bottom:12px}
+  .wz-count{font-size:.85rem;margin-bottom:6px}
+  .wz-bar{height:7px}
+  .wizard legend{font-size:1.08rem;margin-bottom:10px}
+  .opts{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px}
+  .opt span{min-height:52px;padding:8px 10px;gap:.45em;font-size:.84rem;line-height:1.35;border-radius:14px!important}
+  .opt span .ic{width:1.25em;height:1.25em;flex:0 0 auto}
+  .flabel{font-size:.88rem;margin:0 0 6px}
+  .chips{gap:6px;margin-bottom:12px}
+  .chip span{min-height:40px;padding:.3em .9em;font-size:.85rem}
+  .field{margin-bottom:12px}
+  .field input,.field textarea{min-height:46px;padding:10px 12px}
+  .wz-nav{flex-direction:column;gap:8px;margin-top:14px}
+  .wz-nav .btn{width:100%;margin:0!important;min-height:52px;border-radius:14px;font-size:1rem;padding-block:.5em}
+  .wz-nav .wz-back{order:2}
+}
+
+/* closing band on phones: centred, a bit lower, two-line text, shorter buttons */
+@media (max-width:640px){
+  .band-in{flex-direction:column;align-items:center;text-align:center;padding-block:58px 40px;gap:18px}
+  .band h2{font-size:1.45rem;margin-bottom:.35em}
+  .band p{font-size:.88rem;line-height:1.75;max-width:340px;margin-inline:auto}
+  .band .ctas{flex-wrap:nowrap;gap:8px;justify-content:center}
+  .band .ctas .btn{flex:1 1 0;min-width:0;min-height:44px;padding:.35em .6em;font-size:.92rem}
+}
