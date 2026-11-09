@@ -537,7 +537,7 @@ def p_post(L, d):
 <section class="sec"><div class="wrap narrow">
  <article class="article card">
   <img class="acover" src="{post_src(me, img)}" alt="{e(d.get("image_alt") or d["title"])}" width="900" height="560">
-  <div class="prose">{md(d.get("body", ""))}</div>
+  <div class="prose">{md(d.get("body", "")).replace(' src="/', ' src="' + rel(me, "")).replace(' href="/', ' href="' + rel(me, ""))}</div>
   <p class="anote">{b["note"]}</p>
   {cta_buttons(L, me)}
  </article>
@@ -569,7 +569,7 @@ def main():
         for d in POSTS[L].values(): pages["blog/" + d["slug"]] = p_post(L, d)
         for k, h in pages.items(): write(page_path(L, k), h)
         keys += [k for k in pages if k not in keys]
-    write("404.html", p_404("ar").replace('href="./', 'href="/'))
+    write("404.html", p_404("ar").replace('<meta charset="utf-8">', f'<meta charset="utf-8">\n<base href="{C["base_url"]}/">', 1))
     # sitemap + robots
     today = datetime.date.today().isoformat()
     urls = ""
