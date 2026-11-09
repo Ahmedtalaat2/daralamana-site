@@ -5,7 +5,7 @@
 window.SITE_CONFIG = {
   // n8n
   N8N_CHAT_WEBHOOK: "",  // رابط Webhook للمساعد الذكي  (POST {message, sessionId, lang} ← يرجع {reply})
-  N8N_LEAD_WEBHOOK: "",  // رابط Webhook للطلبات والتوظيف (POST بيانات الفورم)
+  N8N_LEAD_WEBHOOK: "https://n8n.ahmedalgamal.tech/webhook/daralamana-lead",  // رابط Webhook للطلبات والتوظيف (POST بيانات الفورم)
   // المدونة: لو حطيت رابط Blogger، آخر ٣ مقالات تظهر في الرئيسية تلقائياً
   BLOGGER_URL: "",       // مثال: "https://daralamana.blogspot.com"
   // أدوات القياس
