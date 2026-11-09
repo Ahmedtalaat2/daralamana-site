@@ -284,12 +284,15 @@ def cta_buttons(L, me, light=False):
  <a class="btn {"btn-wa" if not light else "btn-wa"} btn-lg" href="{wa_link(L)}" target="_blank" rel="noopener" data-track="whatsapp">{WA}{t["cta_whatsapp"]}</a>
 </div>'''
 
-def page_hero(L, me, title, text, crumb=None):
+PH_IMG = {"services": "hero.webp", "about": "vitals.webp", "request": "vitals.webp", "faq": "hero.webp",
+          "contact": "family.webp", "blog": "vitals.webp", "privacy": "family.webp"}
+
+def page_hero(L, me, title, text, crumb=None, key=None, img=None):
     t = T[L]
-    bc = f'<nav class="crumbs" aria-label="breadcrumb"><a href="{rel(me, page_path(L, "index"))}">{t["nav"][0][1]}</a>'
-    if crumb: bc += f'<span>/</span><a href="{rel(me, page_path(L, crumb[0]))}">{crumb[1]}</a>'
-    bc += f'<span>/</span><span aria-current="page">{title}</span></nav>'
-    return f'<section class="phero grid-bg"><div class="wrap">{bc}<h1>{title}</h1><p>{text}</p></div></section>'
+    hook = t["hooks"].get(key, title) if key else title
+    src = img or PH_IMG.get(key, "hero.webp")
+    return (f'<section class="phero ph2"><img class="ph-bg" src="{rel(me, "assets/img/" + src)}" alt="" loading="eager" aria-hidden="true">'
+            f'<div class="wrap ph-in"><h1>{hook}</h1><p>{text}</p></div></section>')
 
 def services_grid(L, me, exclude=None):
     t = T[L]; out = ""
@@ -375,7 +378,7 @@ def p_home(L):
 
 def p_services(L):
     t = T[L]; me = page_path(L, "services")
-    body = page_hero(L, me, t["services_page_title"], t["services_page_text"]) + \
+    body = page_hero(L, me, t["services_page_title"], t["services_page_text"], key="services") + \
         f'<section class="sec"><div class="wrap">{services_grid(L, me)}<p class="note">{ic("shield")}{t["svc_note"]}</p></div></section>' + band(L, me)
     title = f'{t["services_page_title"]} | {t["brand"]}'
     return page(L, "services", title, t["services_page_text"], body)
@@ -386,7 +389,7 @@ def p_service(L, s):
     fr = "".join(f'<li>{ic("check")}{x}</li>' for x in d["for"])
     from urllib.parse import quote
     msg = (t["f_wa_msg"] + " - " + d["name"])
-    body = page_hero(L, me, d["name"], d["intro"], ("services", dict(t["nav"])["services"])) + f'''
+    body = page_hero(L, me, d["name"], d["intro"], img=s.get("img") or ("family.webp" if s["group"] == "mother" else "hero.webp")) + f'''
 <section class="sec"><div class="wrap svc">
  <div class="svc-main">
   <div class="card reveal"><h2>{ic(s["icon"], "ic h-ic")}{t["svc_includes"]}</h2><ul class="ticks">{inc}</ul></div>
@@ -413,7 +416,7 @@ def p_about(L):
     pillars = "".join(f'<div class="pillar reveal"><span class="picon">{ic(i)}</span><h3>{h}</h3><p>{p}</p></div>' for i, h, p in t["pillars"])
     steps = "".join(f'<li class="reveal"><span class="num">{n}</span><h3>{h}</h3><p>{p}</p></li>' for n, (h, p) in zip(("١٢٣٤" if L == "ar" else "1234"), t["steps"]))
     np = "".join(f'<li>{ic("check")}{x}</li>' for x in t["nurses_points"])
-    body = page_hero(L, me, t["about_title"], t["about_text"]) + f'''
+    body = page_hero(L, me, t["about_title"], t["about_text"], key="about") + f'''
 <section class="sec"><div class="wrap split reveal">
  <div><h2>{t["about_story_title"]}</h2><p class="lead-dark">{t["about_story"]}</p></div>
  <div class="pillars pillars-col">{pillars}</div>
@@ -455,7 +458,7 @@ def wizard(L):
 
 def p_request(L):
     t = T[L]; me = page_path(L, "request")
-    body = page_hero(L, me, t["request_title"], t["request_text"]) + f'''
+    body = page_hero(L, me, t["request_title"], t["request_text"], key="request") + f'''
 <section class="sec"><div class="wrap narrow">
 {wizard(L)}
 </div></section>'''
@@ -463,7 +466,7 @@ def p_request(L):
 
 def p_faq(L):
     t = T[L]; me = page_path(L, "faq")
-    body = page_hero(L, me, t["faq_title"], t["faq_page_text"]) + f'<section class="sec"><div class="wrap narrow">{faq_list(L)}</div></section>' + band(L, me)
+    body = page_hero(L, me, t["faq_title"], t["faq_page_text"], key="faq") + f'<section class="sec"><div class="wrap narrow">{faq_list(L)}</div></section>' + band(L, me)
     return page(L, "faq", f'{t["faq_title"]} | {t["brand"]}', t["faq_page_text"], body, [faq_schema(L)])
 
 def contact_block(L, me):
@@ -479,7 +482,7 @@ def contact_block(L, me):
 def p_contact(L):
     t = T[L]; me = page_path(L, "contact")
     soc = "".join(f'<a href="{C[n]}" target="_blank" rel="noopener" aria-label="{n}">{SOCIAL[n]}</a>' for n in ("instagram", "tiktok", "snapchat", "facebook"))
-    body = page_hero(L, me, t["contact_title"], t["contact_text"]) + f'''
+    body = page_hero(L, me, t["contact_title"], t["contact_text"], key="contact") + f'''
 <section class="sec"><div class="wrap contact">
  {contact_block(L, me)}
  <div class="csocial reveal"><b>{t["c_social"]}</b><span dir="ltr">{C["handle"]}</span><div class="social social-dark">{soc}</div>
@@ -490,7 +493,7 @@ def p_contact(L):
 def p_privacy(L):
     t = T[L]; me = page_path(L, "privacy")
     items = "".join(f'<h2>{h}</h2><p>{p}</p>' for h, p in PRIVACY[L])
-    body = page_hero(L, me, t["privacy_title"], t["brand_full"]) + f'<section class="sec"><div class="wrap narrow prose card">{items}</div></section>'
+    body = page_hero(L, me, t["privacy_title"], t["privacy_hero_text"], key="privacy") + f'<section class="sec"><div class="wrap narrow prose card">{items}</div></section>'
     return page(L, "privacy", f'{t["privacy_title"]} | {t["brand"]}', t["privacy_title"] + " - " + t["brand_full"], body)
 
 def p_404(L):
@@ -548,7 +551,7 @@ def p_blog(L):
     t = T[L]; b = BT[L]; me = page_path(L, "blog")
     posts = list(POSTS[L].values())
     inner = post_cards(L, me, posts) if posts else f'<p class="center">{b["empty"]}</p>'
-    body = page_hero(L, me, b["title"], b["text"]) + f'<section class="sec"><div class="wrap">{inner}</div></section>' + band(L, me)
+    body = page_hero(L, me, b["title"], b["text"], key="blog") + f'<section class="sec"><div class="wrap">{inner}</div></section>' + band(L, me)
     schema = {"@context": "https://schema.org", "@type": "Blog", "name": f'{b["title"]} | {t["brand"]}', "url": url_of(L, "blog"), "inLanguage": L,
               "blogPost": [{"@type": "BlogPosting", "headline": d["title"], "url": url_of(L, "blog/" + d["slug"]), "datePublished": d["date"]} for d in posts]}
     return page(L, "blog", f'{b["title"]} | {t["brand"]}', b["text"], body, [schema])
@@ -580,8 +583,11 @@ def p_post(L, d):
     return html
 
 # ---------- build ----------
+DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
+
 def write(path, html):
     full = os.path.join(OUT, path); os.makedirs(os.path.dirname(full), exist_ok=True)
+    if path.endswith(".html"): html = html.translate(DIGITS)
     with open(full, "w", encoding="utf-8") as f: f.write(html)
 
 def main():
