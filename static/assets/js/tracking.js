@@ -7,6 +7,11 @@
   if (c.GOOGLE_SITE_VERIFICATION) {
     var m = d.createElement("meta"); m.name = "google-site-verification"; m.content = c.GOOGLE_SITE_VERIFICATION; d.head.appendChild(m);
   }
+  // عداد الزوار (Umami) — الأرقام بتظهر في لوحة التحكم
+  if (c.UMAMI_WEBSITE_ID) {
+    var u = d.createElement("script"); u.defer = true; u.src = "https://cloud.umami.is/script.js";
+    u.setAttribute("data-website-id", c.UMAMI_WEBSITE_ID); d.head.appendChild(u);
+  }
   // Google (GA4 + Ads)
   if (c.GA4_ID || c.GOOGLE_ADS_ID) {
     load("https://www.googletagmanager.com/gtag/js?id=" + (c.GA4_ID || c.GOOGLE_ADS_ID));
