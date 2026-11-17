@@ -223,63 +223,85 @@
 
   /* ---------- layout ---------- */
   function shell(active, inner) {
-    var tabs = [["", "home", "Home"], ["posts", "posts", "Articles"]];
-    function t(cls) { return tabs.map(function (x) { return '<a href="#/' + x[0] + '" class="' + (active === x[0] ? "on" : "") + '">' + ic(x[1]) + "<span>" + x[2] + "</span></a>"; }).join(""); }
-    app.innerHTML =
-      '<header class="top"><div class="top-in">' +
-      '<a class="brand" href="#/"><img src="../assets/img/logo-icon.png" alt=""><span><b>Dashboard</b><small>Dar Alamana</small></span></a>' +
-      '<nav class="tabs">' + t() + '</nav><span class="sp"></span>' +
-      '<a class="btn pri add" href="#/new" aria-label="New article">' + ic("plus") + '<span class="add-txt">New article</span></a>' +
-      '<div class="menu"><button class="btn ghost icon" id="menu-btn" aria-label="Menu" aria-haspopup="true">' + ic("menu") + '</button>' +
-      '<div class="menu-pop" id="menu-pop" hidden>' +
+    var tabs = [["", "home", "Dashboard"], ["posts", "posts", "Articles"]];
+    function links() { return tabs.map(function (x) { return '<a href="#/' + x[0] + '" class="' + (active === x[0] ? "on" : "") + '">' + ic(x[1]) + "<span>" + x[2] + "</span></a>"; }).join(""); }
+    var logo = '<span class="logo-chip"><img src="../assets/img/logo-icon.png" alt=""></span>';
+    var menuItems =
       '<a href="' + SITE + '" target="_blank" rel="noopener">' + ic("globe") + 'Open website</a>' +
-      '<button id="m-umami">' + ic("chart") + (umamiOn() ? "Visitor counter settings" : "Connect visitor counter") + '</button>' +
-      '<button id="m-pass">' + ic("lock") + 'Change password</button>' +
-      '<button id="m-out" class="red">' + ic("out") + 'Log out</button></div></div>' +
-      '</div></header><main id="main">' + inner + '</main>' +
-      '<nav class="btab">' + t() + '</nav>';
+      '<button data-act="umami">' + ic("chart") + (umamiOn() ? "Visitor counter" : "Connect visitor counter") + '</button>' +
+      '<button data-act="pass">' + ic("lock") + 'Change password</button>' +
+      '<button data-act="out" class="red">' + ic("out") + 'Log out</button>';
+    var d = new Date(), hour = d.getHours();
+    var hello = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+    app.innerHTML =
+      '<div class="mtop">' + logo + '<b>Dar Alamana</b><span class="sp"></span>' +
+      '<a class="btn pri add" href="#/new" aria-label="New article">' + ic("plus") + '</a>' +
+      '<div class="menu"><button class="btn icon" id="menu-btn" aria-label="Menu" aria-haspopup="true">' + ic("menu") + '</button><div class="menu-pop nav" id="menu-pop" hidden>' + menuItems + '</div></div></div>' +
+      '<div class="frame"><aside class="side">' +
+      '<a class="brand" href="#/">' + logo + '<span><b>Dar Alamana</b><small>Admin dashboard</small></span></a>' +
+      '<nav class="nav">' + links() + '<a href="#/new" class="' + (active === "edit" && location.hash === "#/new" ? "on" : "") + '">' + ic("plus") + '<span>New article</span></a></nav>' +
+      '<span class="sp"></span><div class="lbl">Settings</div><nav class="nav">' + menuItems + '</nav></aside>' +
+      '<div class="colm"><header class="top"><div class="hi"><h1>' + hello + ', <span>Dar Alamana</span></h1><p>' + d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) + '</p></div>' +
+      '<span class="sp"></span><a class="btn pri add-top" href="#/new">' + ic("plus") + 'New article</a>' +
+      '<div class="me">' + logo + '<span><b>Admin</b><small>Dar Alamana</small></span></div></header>' +
+      '<main id="main">' + inner + '</main></div></div>' +
+      '<nav class="btab">' + links() + '</nav>';
     var pop = $("#menu-pop");
     $("#menu-btn").onclick = function (e) { e.stopPropagation(); pop.hidden = !pop.hidden; };
     document.onclick = function () { pop.hidden = true; };
-    $("#m-pass").onclick = changePassword;
-    $("#m-umami").onclick = setupUmami;
-    $("#m-out").onclick = function () { confirmBox("Log out?", "You will need your password to log in again.", "Log out").then(function (ok) { if (ok) logout(); }); };
+    $$("[data-act]").forEach(function (b) {
+      b.onclick = function () {
+        pop.hidden = true; var a = b.dataset.act;
+        if (a === "pass") changePassword(); else if (a === "umami") setupUmami();
+        else confirmBox("Log out?", "You will need your password to log in again.", "Log out").then(function (ok) { if (ok) logout(); });
+      };
+    });
     document.body.classList.toggle("editing", active === "edit");
     window.scrollTo(0, 0);
   }
   function loadingHtml(t) { return '<div class="loading"><span class="spin"></span>' + (t || "Loading...") + "</div>"; }
 
   /* ---------- home ---------- */
+  var RANGE = 14;
   function viewDash() {
     shell("", loadingHtml());
     loadPosts().then(function (posts) {
       var live = posts.filter(function (p) { return !p.d.draft; }), drafts = posts.length - live.length;
       var ar = live.filter(function (p) { return p.lang === "ar"; }).length, en = live.length - ar;
       var u = umamiOn();
-      var stat = function (cls, icon, k, id, s) { return '<div class="card stat ' + cls + '"><div class="k">' + ic(icon) + k + '</div><div class="v" id="' + id + '">' + (u || id === "st-posts" ? "…" : "—") + '</div><div class="s" id="' + id + '-s">' + (s || "") + "</div></div>"; };
-      var h = '<div class="h"><div><h1>Welcome back 👋</h1><p>A quick look at your website and articles.</p></div></div>' +
+      var stat = function (cls, icon, k, id) { return '<div class="card stat ' + cls + '"><div class="k">' + ic(icon) + k + '</div><div class="v" id="' + id + '">' + (u ? "…" : "—") + '</div><div class="s" id="' + id + '-s">' + (u ? "" : "Not connected yet") + "</div></div>"; };
+      var waiting = function (id) { return '<div id="' + id + '">' + (u ? loadingHtml("") : '<p class="muted" style="margin:0">Connect the visitor counter to see this.</p>') + "</div>"; };
+      var tiles = posts.slice(0, 4).map(function (p) {
+        return '<a class="tile" href="#/edit/' + p.lang + "/" + encodeURIComponent(p.d.slug) + '"><img src="' + esc(siteUrl(p.d.image || "/assets/img/vitals.webp")) + '" alt="" loading="lazy">' +
+          '<b dir="' + (p.lang === "en" ? "ltr" : "rtl") + '">' + esc(p.d.title) + '</b><small>' + (p.d.draft ? '<span class="tag draft">Draft</span>' : '<span class="tag live">Live</span>') + esc(fmtDate(p.d.date)) + "</small></a>";
+      }).join("");
+      var h =
         '<div class="grid g4">' +
-        stat("pur", "users", "Visitors today", "st-today", "") +
-        stat("", "users", "Visitors, last 7 days", "st-week", "") +
-        stat("", "eye", "Page views, last 30 days", "st-month", "") +
-        '<div class="card stat"><div class="k">' + ic("article") + 'Published articles</div><div class="v" id="st-posts">' + live.length + '</div><div class="s">Arabic ' + ar + " · English " + en + (drafts ? " · Drafts " + drafts : "") + "</div></div>" +
-        "</div>";
-      if (!u) h += '<div class="card sec"><h2>' + ic("chart") + 'Visitor counter is not connected yet</h2><p class="muted" style="margin:0 0 12px">Connect it once. Then you will see here how many people visit, your top pages, where visitors come from, and phone vs. computer.</p><button class="btn pri" id="go-umami">' + ic("chart") + 'Connect visitor counter</button></div>';
-      else h += '<div class="grid g2 sec">' +
-        '<div class="card"><h2>' + ic("chart") + 'Page views, last 14 days</h2><div id="u-chart">' + loadingHtml("") + '</div></div>' +
-        '<div class="card"><h2>' + ic("eye") + 'Top pages <small class="muted">(30 days)</small></h2><div id="u-pages">' + loadingHtml("") + '</div></div>' +
-        '<div class="card"><h2>' + ic("link") + 'Where visitors come from <small class="muted">(30 days)</small></h2><div id="u-refs">' + loadingHtml("") + '</div></div>' +
-        '<div class="card"><h2>' + ic("phone") + 'Devices <small class="muted">(30 days)</small></h2><div id="u-dev">' + loadingHtml("") + '</div></div></div>';
-      h += '<div class="grid g2 sec">' +
-        '<div class="card"><h2>' + ic("posts") + 'Latest articles</h2>' + (posts.length ? '<ul class="rank">' + posts.slice(0, 5).map(function (p) {
-          return '<li><span class="t" style="direction:' + (p.lang === "en" ? "ltr" : "rtl") + '">' + esc(p.d.title) + '</span>' + (p.d.draft ? '<span class="tag draft">Draft</span>' : "") + '<a class="btn sm" href="#/edit/' + p.lang + "/" + encodeURIComponent(p.d.slug) + '">' + ic("edit") + "Edit</a></li>";
-        }).join("") + "</ul>" : '<p class="muted">No articles yet.</p>') +
-        '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><a class="btn pri sm" href="#/new">' + ic("plus") + 'New article</a><a class="btn sm" href="#/posts">All articles</a></div></div>' +
-        '<div class="card"><h2>' + ic("rocket") + 'Website status</h2><div class="deploy" id="deploy"><span class="dot run"></span><span class="muted">Checking...</span></div>' +
-        '<p class="muted" style="font-size:13.5px;margin:12px 0 0">Articles you save show up on the website in about 1 minute.</p>' +
-        '<a class="btn ghost sm" style="margin-top:12px" href="' + SITE + '" target="_blank" rel="noopener">' + ic("globe") + 'Open website</a></div></div>';
+        stat("pur", "users", "Visitors today", "st-today") +
+        stat("", "users", "Visitors · 7 days", "st-week") +
+        stat("", "eye", "Page views · 30 days", "st-month") +
+        '<div class="card stat"><div class="k">' + ic("article") + 'Published articles</div><div class="v">' + live.length + '</div><div class="s">Arabic ' + ar + " · English " + en + (drafts ? " · " + drafts + " draft" + (drafts > 1 ? "s" : "") : "") + "</div></div></div>" +
+        '<div class="grid g3 sec">' +
+        '<div class="card glow">' + (u
+          ? '<h2>Share something helpful</h2><p>New articles help families find you on Google. Write one in a few minutes.</p><a class="btn pri" href="#/new">' + ic("plus") + "Write a new article</a>"
+          : '<h2>See who visits your website</h2><p>Connect the free visitor counter once. Then all your numbers show up right here.</p><button class="btn pri" id="go-umami">' + ic("chart") + "Connect visitor counter</button>") + "</div>" +
+        '<div class="card"><h2>' + ic("eye") + 'Top pages <small class="muted">· 30 days</small></h2>' + waiting("u-pages") + "</div>" +
+        '<div class="card wide"><div class="card-h"><h2>' + ic("posts") + 'Latest articles</h2><a class="btn sm" href="#/posts">See all</a></div>' +
+        (tiles ? '<div class="tiles">' + tiles + "</div>" : '<p class="muted">No articles yet.</p>') + "</div></div>" +
+        '<div class="card sec"><div class="card-h"><h2>' + ic("chart") + 'Website traffic</h2><div class="pills" id="rng">' +
+        [[7, "7D"], [14, "14D"], [30, "1M"], [90, "3M"]].map(function (r) { return '<button class="pill' + (r[0] === RANGE ? " on" : "") + '" data-r="' + r[0] + '">' + r[1] + "</button>"; }).join("") +
+        "</div></div>" + (u ? '<div id="u-chart">' + loadingHtml("") + "</div>" : '<div class="note">Your daily visitors will show here as a chart once the visitor counter is connected.</div>') + "</div>" +
+        '<div class="grid g3 sec">' +
+        '<div class="card"><h2>' + ic("link") + 'Where visitors come from <small class="muted">· 30 days</small></h2>' + waiting("u-refs") + "</div>" +
+        '<div class="card"><h2>' + ic("phone") + 'Devices <small class="muted">· 30 days</small></h2>' + waiting("u-dev") + "</div>" +
+        '<div class="card wide"><h2>' + ic("rocket") + 'Website status</h2><div class="deploy" id="deploy"><span class="dot run"></span><span class="muted">Checking...</span></div>' +
+        '<p class="muted" style="font-size:13.5px;margin:12px 0 14px">Articles you save show up on the website in about 1 minute.</p>' +
+        '<a class="btn sm" href="' + SITE + '" target="_blank" rel="noopener">' + ic("globe") + "Open website</a></div></div>";
       $("#main").innerHTML = h;
       if ($("#go-umami")) $("#go-umami").onclick = setupUmami;
+      $$("#rng .pill").forEach(function (b) {
+        b.onclick = function () { if (!u) return setupUmami(); RANGE = +b.dataset.r; $$("#rng .pill").forEach(function (x) { x.classList.toggle("on", x === b); }); loadChart(); };
+      });
       watchDeploy();
       if (u) loadVisitors();
     }).catch(failView);
@@ -287,29 +309,67 @@
   function loadVisitors() {
     var now = Date.now();
     function set(id, v, s) { var el = $("#" + id); if (el) el.textContent = v; if (s != null && $("#" + id + "-s")) $("#" + id + "-s").textContent = s; }
-    var fail = function () { set("st-today", "—"); var c = $("#u-chart"); if (c) c.innerHTML = '<p class="note amber">Can’t load visitor numbers right now. Check the visitor counter settings in the menu.</p>'; ["u-pages", "u-refs", "u-dev"].forEach(function (i) { if ($("#" + i)) $("#" + i).innerHTML = '<p class="muted">—</p>'; }); };
+    var fail = function () { set("st-today", "—", "Couldn’t load"); };
     um("/stats", { startAt: dayStart(0), endAt: now }).then(function (s) { set("st-today", num(val(s.visitors)), num(val(s.pageviews)) + " page views"); }).catch(fail);
     um("/stats", { startAt: dayStart(6), endAt: now }).then(function (s) { set("st-week", num(val(s.visitors)), num(val(s.pageviews)) + " page views"); }).catch(function () { set("st-week", "—"); });
     um("/stats", { startAt: dayStart(29), endAt: now }).then(function (s) { set("st-month", num(val(s.pageviews)), num(val(s.visitors)) + " visitors"); }).catch(function () { set("st-month", "—"); });
-    um("/pageviews", { startAt: dayStart(13), endAt: now, unit: "day", timezone: TZ }).then(function (r) {
-      var m = {}; (r.pageviews || []).forEach(function (p) { m[String(p.x).slice(0, 10)] = +p.y || 0; });
-      var days = []; for (var i = 13; i >= 0; i--) { var d = new Date(dayStart(i)); var k = d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); days.push([d, m[k] || 0]); }
-      var max = Math.max.apply(null, days.map(function (x) { return x[1]; }).concat([1]));
-      $("#u-chart").innerHTML = '<div class="chart">' + days.map(function (x) {
-        return '<div class="b" title="' + x[1] + '"><em>' + (x[1] || "") + '</em><i style="height:' + Math.max(2, Math.round(x[1] / max * 100)) + '%"></i><span>' + x[0].getDate() + "/" + (x[0].getMonth() + 1) + "</span></div>";
-      }).join("") + "</div>";
-    }).catch(fail);
+    loadChart();
     var start30 = dayStart(29);
-    function list(id, type, label) {
+    function list(id, type, label, icon, bars) {
       metric(type, start30).then(function (rows) {
         var el = $("#" + id); if (!el) return;
-        if (!rows || !rows.length) { el.innerHTML = '<p class="muted">No data yet.</p>'; return; }
-        el.innerHTML = '<ul class="rank">' + rows.slice(0, 6).map(function (r) { return '<li><span class="t">' + esc(label(r.x)) + '</span><span class="n">' + num(r.y) + "</span></li>"; }).join("") + "</ul>";
-      }).catch(function () { var el = $("#" + id); if (el) el.innerHTML = '<p class="muted">—</p>'; });
+        if (!rows || !rows.length) { el.innerHTML = '<p class="muted" style="margin:0">No data yet.</p>'; return; }
+        var total = rows.reduce(function (a, r) { return a + (+r.y || 0); }, 0) || 1;
+        el.innerHTML = '<ul class="rank">' + rows.slice(0, bars ? 5 : 5).map(function (r) {
+          var pct = Math.round((+r.y || 0) / total * 100);
+          return '<li><span class="ri">' + ic(icon(r.x)) + '</span><span class="t">' + esc(label(r.x)) + (bars ? '<span class="bar"><i style="width:' + pct + '%"></i></span>' : "") + '</span><span class="n">' + num(r.y) + (bars ? "<small>" + pct + "%</small>" : "") + "</span></li>";
+        }).join("") + "</ul>";
+      }).catch(function () { var el = $("#" + id); if (el) el.innerHTML = '<p class="muted" style="margin:0">Couldn’t load. Check the visitor counter in the menu.</p>'; });
     }
-    list("u-pages", "path", function (x) { return pageName(x); });
-    list("u-refs", "referrer", function (x) { return refName(x); });
-    list("u-dev", "device", function (x) { return { mobile: "Phone", desktop: "Computer", laptop: "Laptop", tablet: "Tablet" }[x] || x || "Unknown"; });
+    list("u-pages", "path", pageName, function (x) { return /blog\//.test(x) ? "article" : "globe"; }, false);
+    list("u-refs", "referrer", refName, function () { return "link"; }, true);
+    list("u-dev", "device", function (x) { return { mobile: "Phone", desktop: "Computer", laptop: "Laptop", tablet: "Tablet" }[x] || x || "Unknown"; }, function (x) { return x === "mobile" || x === "tablet" ? "phone" : "chart"; }, true);
+  }
+  var chartCache = {};
+  function loadChart() {
+    var el = $("#u-chart"); if (!el) return;
+    var n = RANGE, key = n + ":" + dayStart(0);
+    var draw = function (days) { var e2 = $("#u-chart"); if (e2 && RANGE === n) lineChart(e2, days); };
+    if (chartCache[key]) return draw(chartCache[key]);
+    el.innerHTML = loadingHtml("");
+    um("/pageviews", { startAt: dayStart(n - 1), endAt: Date.now(), unit: "day", timezone: TZ }).then(function (r) {
+      var m = {}; (r.pageviews || []).forEach(function (p) { m[String(p.x).slice(0, 10)] = +p.y || 0; });
+      var days = []; for (var i = n - 1; i >= 0; i--) { var d = new Date(dayStart(i)); days.push({ d: d, y: m[d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate())] || 0 }); }
+      chartCache[key] = days; draw(days);
+    }).catch(function () { var e2 = $("#u-chart"); if (e2) e2.innerHTML = '<p class="note amber">Can’t load visitor numbers right now. Check the visitor counter in the menu.</p>'; });
+  }
+  function lineChart(el, pts) {
+    el.innerHTML = '<div class="lc"></div><div class="lc-x"></div>';
+    var box = $(".lc", el), W = Math.max(280, box.clientWidth), H = box.clientHeight, L = 38, T = 14, B = 10, R = 8;
+    var max = Math.max.apply(null, pts.map(function (p) { return p.y; }).concat([4]));
+    var step = Math.pow(10, Math.floor(Math.log10(max))); var top = Math.ceil(max / step) * step; if (top / step < 3) { step /= 2; top = Math.ceil(max / step) * step; }
+    var X = function (i) { return L + (W - L - R) * (pts.length === 1 ? .5 : i / (pts.length - 1)); }, Y = function (v) { return T + (H - T - B) * (1 - v / top); };
+    var xy = pts.map(function (p, i) { return [X(i), Y(p.y)]; });
+    var line = "M" + xy[0][0] + "," + xy[0][1];
+    for (var i = 1; i < xy.length; i++) { var a = xy[i - 1], b = xy[i], mx = (a[0] + b[0]) / 2; line += " C" + mx + "," + a[1] + " " + mx + "," + b[1] + " " + b[0] + "," + b[1]; }
+    var area = line + " L" + xy[xy.length - 1][0] + "," + (H - B) + " L" + xy[0][0] + "," + (H - B) + " Z";
+    var grid = ""; for (var v = 0; v <= top; v += step) { var y = Y(v); grid += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y + '" y2="' + y + '" stroke="rgba(255,255,255,.07)"/><text x="' + (L - 8) + '" y="' + (y + 4) + '" fill="#6F6688" font-size="11" text-anchor="end">' + num(v) + "</text>"; }
+    box.innerHTML = '<svg viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none" aria-label="Page views per day"><defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9B78D7" stop-opacity=".55"/><stop offset="1" stop-color="#5A3E98" stop-opacity="0"/></linearGradient>' +
+      '<linearGradient id="gl" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9B78D7"/><stop offset="1" stop-color="#E4D4FA"/></linearGradient></defs>' + grid +
+      '<path d="' + area + '" fill="url(#ga)"/><path d="' + line + '" fill="none" stroke="url(#gl)" stroke-width="2.4" stroke-linecap="round"/>' +
+      '<line id="lc-v" y1="' + T + '" y2="' + (H - B) + '" stroke="rgba(202,177,234,.6)" stroke-dasharray="3 4"/><circle id="lc-d" r="6" fill="#F1EDF9" stroke="#9B78D7" stroke-width="3"/></svg><div class="tip" id="lc-t"></div>';
+    var xs = $(".lc-x", el), every = Math.ceil(pts.length / 7);
+    xs.innerHTML = pts.map(function (p, i) { return i % every === 0 || i === pts.length - 1 ? "<span>" + p.d.getDate() + " " + AR_M[p.d.getMonth()] + "</span>" : ""; }).join("");
+    function show(i) {
+      var p = pts[i], q = xy[i];
+      $("#lc-v").setAttribute("x1", q[0]); $("#lc-v").setAttribute("x2", q[0]); $("#lc-d").setAttribute("cx", q[0]); $("#lc-d").setAttribute("cy", q[1]);
+      var t = $("#lc-t"); t.style.left = Math.min(Math.max(q[0], 60), W - 60) + "px"; t.style.top = q[1] + "px"; t.classList.toggle("below", q[1] < 70);
+      t.innerHTML = "<span>" + p.d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" }) + "</span><b>" + p.y + " page view" + (p.y === 1 ? "" : "s") + "</b>";
+    }
+    var best = 0; pts.forEach(function (p, i) { if (p.y >= pts[best].y) best = i; }); show(best);
+    box.addEventListener("pointermove", function (e) { var r = box.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * W; var i = Math.round((x - L) / ((W - L - R) / Math.max(1, pts.length - 1))); show(Math.max(0, Math.min(pts.length - 1, i))); });
+    clearTimeout(lineChart.t);
+    window.onresize = function () { clearTimeout(lineChart.t); lineChart.t = setTimeout(function () { var e2 = $("#u-chart"); if (e2 && $(".lc", e2) && Math.abs($(".lc", e2).clientWidth - W) > 20) lineChart(e2, pts); }, 200); };
   }
   function pageName(x) {
     var p = String(x || "/").replace(/^\/daralamana-site/, "").replace(/\.html$/, "").replace(/\/index$/, "/") || "/";
@@ -762,10 +822,10 @@
   /* ---------- login ---------- */
   function viewLogin(box, msg) {
     app.innerHTML = '<div class="login">' +
-      '<form class="g-card" id="g-login"' + (box ? "" : " hidden") + '><img src="../assets/img/logo-icon.png" alt=""><h1>Dar Alamana Dashboard</h1><p>Type your password to log in</p>' +
+      '<form class="g-card" id="g-login"' + (box ? "" : " hidden") + '><span class="logo-chip big"><img src="../assets/img/logo-icon.png" alt=""></span><h1>Dar Alamana Dashboard</h1><p>Type your password to log in</p>' +
       '<label class="fld"><span>Password</span><input class="inp ltr" id="g-pass" type="password" autocomplete="current-password" required></label>' +
       '<div class="err" id="g-err">' + esc(msg || "") + '</div><button class="btn pri" type="submit">Log in</button><button class="btn" type="button" id="g-renew">Update GitHub token</button></form>' +
-      '<form class="g-card" id="g-setup"' + (box ? " hidden" : "") + '><img src="../assets/img/logo-icon.png" alt=""><h1>' + (box ? "Update GitHub token" : "First-time setup") + '</h1><p>Paste your GitHub token and choose a password.</p>' +
+      '<form class="g-card" id="g-setup"' + (box ? " hidden" : "") + '><span class="logo-chip big"><img src="../assets/img/logo-icon.png" alt=""></span><h1>' + (box ? "Update GitHub token" : "First-time setup") + '</h1><p>Paste your GitHub token and choose a password.</p>' +
       '<label class="fld"><span>GitHub token</span><input class="inp ltr" id="s-token" type="password" autocomplete="off" required></label>' +
       '<label class="fld"><span>Password (at least 10 characters)</span><input class="inp ltr" id="s-pass" type="password" autocomplete="new-password" minlength="10" required></label>' +
       '<label class="fld"><span>Type it again</span><input class="inp ltr" id="s-pass2" type="password" autocomplete="new-password" minlength="10" required></label>' +
