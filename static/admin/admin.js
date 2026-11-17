@@ -1,19 +1,19 @@
-/* لوحة تحكم دار الأمانة
-   - الدخول بكلمة مرور: توكن GitHub (ومفتاح عداد الزوار) متشفّرين في admin/auth.json
-   - المقالات: ملفات JSON في content/blog/{ar,en}/، والحفظ بيعمل commit على GitHub والموقع بيتحدّث لوحده
-   - الزوار: Umami (لو اتربط من الداش بورد) */
+/* Dar Alamana admin dashboard
+   - Password login: the GitHub token (and the visitor counter key) are encrypted in admin/auth.json
+   - Articles: JSON files in content/blog/{ar,en}/. Saving makes a commit on GitHub and the site rebuilds itself
+   - Visitors: Umami (once connected from the dashboard) */
 (function () {
   "use strict";
   var REPO = "Ahmedtalaat2/daralamana-site", BRANCH = "main";
   var AUTH_FILE = "static/admin/auth.json", CFG_FILE = "static/assets/js/config.js", IMG_DIR = "static/assets/img/blog";
   var API = window.GH_API || "https://api.github.com", UMAMI_API = window.UMAMI_API || "https://api.umami.is/v1";
   var KEY = "dar-admin", ITER = 600000;
-  var SITE = new URL("../", location.href).href;            // جذر الموقع
-  var LANGS = { ar: "عربي", en: "English" };
+  var SITE = new URL("../", location.href).href;            // site root
+  var LANGS = { ar: "Arabic", en: "English" };
   var TZ = (function () { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Qatar"; } catch (e) { return "Asia/Qatar"; } })();
   var app = document.getElementById("app");
 
-  /* ---------- أدوات ---------- */
+  /* ---------- helpers ---------- */
   var ICONS = {
     home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/>',
     posts: '<path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h8M8 16h5"/>',
@@ -42,13 +42,14 @@
   function $$(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
   function today() { var d = new Date(); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
   function pad(n) { return (n < 10 ? "0" : "") + n; }
-  var AR_M = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
-  function fmtDate(iso) { var p = String(iso || "").split("-"); if (p.length < 3) return iso || ""; return (+p[2]) + " " + AR_M[(+p[1]) - 1] + " " + p[0]; }
+  var AR_M = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  function fmtDate(iso) { var p = String(iso || "").split("-"); if (p.length < 3) return iso || ""; return AR_M[(+p[1]) - 1] + " " + (+p[2]) + ", " + p[0]; }
   function num(n) { n = +n || 0; return n >= 10000 ? (n / 1000).toFixed(1).replace(/\.0$/, "") + "k" : String(n); }
   function ago(iso) {
     var s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
-    if (s < 60) return "من لحظات"; if (s < 3600) return "من " + Math.round(s / 60) + " دقيقة";
-    if (s < 86400) return "من " + Math.round(s / 3600) + " ساعة"; return "من " + Math.round(s / 86400) + " يوم";
+    var u = function (n, w) { return n + " " + w + (n === 1 ? "" : "s") + " ago"; };
+    if (s < 60) return "just now"; if (s < 3600) return u(Math.round(s / 60), "minute");
+    if (s < 86400) return u(Math.round(s / 3600), "hour"); return u(Math.round(s / 86400), "day");
   }
   function siteUrl(p) { return p && p.charAt(0) === "/" ? SITE + p.slice(1) : p; }
   function postUrl(p) { return SITE + (p.lang === "en" ? "en/" : "") + "blog/" + p.d.slug + ".html"; }
@@ -70,7 +71,7 @@
   }
   function confirmBox(title, text, okLabel, danger) {
     return new Promise(function (res) {
-      modal('<h1>' + esc(title) + '</h1><p class="muted">' + esc(text) + '</p><div class="row"><button class="btn ' + (danger ? "danger solid" : "pri") + '" data-ok>' + esc(okLabel) + '</button><button class="btn ghost" data-no>رجوع</button></div>',
+      modal('<h1>' + esc(title) + '</h1><p class="muted">' + esc(text) + '</p><div class="row"><button class="btn ' + (danger ? "danger solid" : "pri") + '" data-ok>' + esc(okLabel) + '</button><button class="btn ghost" data-no>Cancel</button></div>',
         function (box, close) {
           $("[data-ok]", box).onclick = function () { close(); res(true); };
           $("[data-no]", box).onclick = function () { close(); res(false); };
@@ -78,7 +79,7 @@
     });
   }
 
-  /* ---------- base64 / تشفير ---------- */
+  /* ---------- base64 / encryption ---------- */
   var enc = new TextEncoder(), dec = new TextDecoder();
   function bytesB64(u8) { var s = ""; for (var i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); }
   function b64Bytes(s) { return Uint8Array.from(atob(String(s).replace(/\s/g, "")), function (c) { return c.charCodeAt(0); }); }
@@ -100,11 +101,11 @@
       .then(function (pt) { var t = dec.decode(pt); if (t.charAt(0) === "{") { try { return JSON.parse(t); } catch (e) {} } return { token: t }; });
   }
 
-  /* ---------- الجلسة ---------- */
+  /* ---------- session ---------- */
   var S = { vault: null, posts: null, dirty: false };
   function loadSession() {
     try { var v = JSON.parse(localStorage.getItem(KEY) || "null"); if (v && v.token) return v; } catch (e) {}
-    try { var o = JSON.parse(localStorage.getItem("sveltia-cms.user") || "null"); if (o && o.token) return { token: o.token }; } catch (e) {}  // من لوحة التحكم القديمة
+    try { var o = JSON.parse(localStorage.getItem("sveltia-cms.user") || "null"); if (o && o.token) return { token: o.token }; } catch (e) {}  // from the old admin
     return null;
   }
   function saveSession(v) { S.vault = v; try { localStorage.setItem(KEY, JSON.stringify(v)); localStorage.removeItem("sveltia-cms.user"); } catch (e) {} }
@@ -119,7 +120,7 @@
     var h = { Authorization: "Bearer " + S.vault.token, Accept: "application/vnd.github+json" };
     if (opt.body) h["Content-Type"] = "application/json";
     return fetch(API + path, { method: opt.method || "GET", headers: h, body: opt.body, cache: "no-store" }).then(function (r) {
-      if (r.status === 401) { logout("توكن GitHub انتهى أو اتلغى. دوس «تحديث توكن GitHub»."); throw new Error("401"); }
+      if (r.status === 401) { logout("Your GitHub token expired or was removed. Tap \"Update GitHub token\"."); throw new Error("401"); }
       return r;
     });
   }
@@ -144,9 +145,9 @@
   }
   function checkToken(token) {
     return fetch(API + "/repos/" + REPO, { headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json" }, cache: "no-store" }).then(function (r) {
-      if (r.status === 401) return "توكن GitHub انتهى أو اتلغى. دوس «تحديث توكن GitHub».";
-      if (!r.ok) return "التوكن مالوش صلاحية على مستودع الموقع.";
-      return r.json().then(function (j) { return j.permissions && !j.permissions.push ? "التوكن صلاحيته قراءة بس، لازم Contents: Read and write." : ""; });
+      if (r.status === 401) return "Your GitHub token expired or was removed. Tap \"Update GitHub token\".";
+      if (!r.ok) return "This token can’t access the website’s repository.";
+      return r.json().then(function (j) { return j.permissions && !j.permissions.push ? "This token can only read. It needs \"Contents: Read and write\"." : ""; });
     }).catch(function () { return ""; });
   }
   function saveAuth(vault, pass, msg) {
@@ -158,7 +159,7 @@
     return fetch("auth.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
   }
 
-  /* ---------- المقالات ---------- */
+  /* ---------- articles ---------- */
   function loadPosts(force) {
     if (S.posts && !force) return Promise.resolve(S.posts);
     var all = [];
@@ -180,7 +181,7 @@
   function sortPosts(a) { return a.sort(function (x, y) { return String(y.d.date || "").localeCompare(String(x.d.date || "")) || String(x.d.title).localeCompare(String(y.d.title)); }); }
   function findPost(L, slug) { return (S.posts || []).filter(function (p) { return p.lang === L && p.d.slug === slug; })[0]; }
 
-  /* ---------- حالة نشر الموقع ---------- */
+  /* ---------- site update status ---------- */
   var deployTimer = null;
   function deployStatus() {
     return gh("/repos/" + REPO + "/actions/runs?per_page=1&branch=" + BRANCH).then(function (r) { return r.ok ? r.json() : null; })
@@ -188,10 +189,10 @@
   }
   function renderDeploy(el, run) {
     if (!el) return;
-    if (!run) { el.innerHTML = '<span class="dot"></span><span class="muted">مش قادر أعرف حالة التحديث دلوقتي.</span>'; return; }
+    if (!run) { el.innerHTML = '<span class="dot"></span><span class="muted">Can’t check the update status right now.</span>'; return; }
     var busy = run.status !== "completed", bad = !busy && run.conclusion !== "success";
     el.innerHTML = '<span class="dot' + (busy ? " run" : bad ? " bad" : "") + '"></span><span>' +
-      (busy ? "الموقع بيتحدّث دلوقتي... (حوالي دقيقة)" : bad ? "آخر تحديث للموقع ماكملش. جرّب تحفظ تاني أو كلّمني." : "الموقع محدّث، آخر تحديث " + ago(run.updated_at)) + "</span>";
+      (busy ? "The website is updating... (about 1 minute)" : bad ? "The last website update didn’t finish. Try saving again, or contact support." : "The website is up to date. Last update " + ago(run.updated_at)) + "</span>";
     return busy;
   }
   function watchDeploy() {
@@ -205,7 +206,7 @@
     })();
   }
 
-  /* ---------- الزوار (Umami) ---------- */
+  /* ---------- visitors (Umami) ---------- */
   function umamiId() { return (window.SITE_CONFIG && window.SITE_CONFIG.UMAMI_WEBSITE_ID) || ""; }
   function umamiOn() { return !!(umamiId() && S.vault && S.vault.umami); }
   function um(path, q) {
@@ -220,21 +221,21 @@
     return um("/metrics", q).catch(function (e) { if (type === "path") { q.type = "url"; return um("/metrics", q); } throw e; });
   }
 
-  /* ---------- الهيكل ---------- */
+  /* ---------- layout ---------- */
   function shell(active, inner) {
-    var tabs = [["", "home", "الرئيسية"], ["posts", "posts", "المقالات"]];
+    var tabs = [["", "home", "Home"], ["posts", "posts", "Articles"]];
     function t(cls) { return tabs.map(function (x) { return '<a href="#/' + x[0] + '" class="' + (active === x[0] ? "on" : "") + '">' + ic(x[1]) + "<span>" + x[2] + "</span></a>"; }).join(""); }
     app.innerHTML =
       '<header class="top"><div class="top-in">' +
-      '<a class="brand" href="#/"><img src="../assets/img/logo-icon.png" alt=""><span><b>لوحة التحكم</b><small>دار الأمانة</small></span></a>' +
+      '<a class="brand" href="#/"><img src="../assets/img/logo-icon.png" alt=""><span><b>Dashboard</b><small>Dar Alamana</small></span></a>' +
       '<nav class="tabs">' + t() + '</nav><span class="sp"></span>' +
-      '<a class="btn pri add" href="#/new" aria-label="إضافة مقال">' + ic("plus") + '<span class="add-txt">إضافة مقال</span></a>' +
-      '<div class="menu"><button class="btn ghost icon" id="menu-btn" aria-label="القائمة" aria-haspopup="true">' + ic("menu") + '</button>' +
+      '<a class="btn pri add" href="#/new" aria-label="New article">' + ic("plus") + '<span class="add-txt">New article</span></a>' +
+      '<div class="menu"><button class="btn ghost icon" id="menu-btn" aria-label="Menu" aria-haspopup="true">' + ic("menu") + '</button>' +
       '<div class="menu-pop" id="menu-pop" hidden>' +
-      '<a href="' + SITE + '" target="_blank" rel="noopener">' + ic("globe") + 'افتح الموقع</a>' +
-      '<button id="m-umami">' + ic("chart") + (umamiOn() ? "إعدادات عداد الزوار" : "اربط عداد الزوار") + '</button>' +
-      '<button id="m-pass">' + ic("lock") + 'تغيير كلمة المرور</button>' +
-      '<button id="m-out" class="red">' + ic("out") + 'خروج</button></div></div>' +
+      '<a href="' + SITE + '" target="_blank" rel="noopener">' + ic("globe") + 'Open website</a>' +
+      '<button id="m-umami">' + ic("chart") + (umamiOn() ? "Visitor counter settings" : "Connect visitor counter") + '</button>' +
+      '<button id="m-pass">' + ic("lock") + 'Change password</button>' +
+      '<button id="m-out" class="red">' + ic("out") + 'Log out</button></div></div>' +
       '</div></header><main id="main">' + inner + '</main>' +
       '<nav class="btab">' + t() + '</nav>';
     var pop = $("#menu-pop");
@@ -242,13 +243,13 @@
     document.onclick = function () { pop.hidden = true; };
     $("#m-pass").onclick = changePassword;
     $("#m-umami").onclick = setupUmami;
-    $("#m-out").onclick = function () { confirmBox("تسجيل الخروج؟", "هتحتاج كلمة المرور تاني علشان تدخل.", "خروج").then(function (ok) { if (ok) logout(); }); };
+    $("#m-out").onclick = function () { confirmBox("Log out?", "You will need your password to log in again.", "Log out").then(function (ok) { if (ok) logout(); }); };
     document.body.classList.toggle("editing", active === "edit");
     window.scrollTo(0, 0);
   }
-  function loadingHtml(t) { return '<div class="loading"><span class="spin"></span>' + (t || "جاري التحميل...") + "</div>"; }
+  function loadingHtml(t) { return '<div class="loading"><span class="spin"></span>' + (t || "Loading...") + "</div>"; }
 
-  /* ---------- الرئيسية ---------- */
+  /* ---------- home ---------- */
   function viewDash() {
     shell("", loadingHtml());
     loadPosts().then(function (posts) {
@@ -256,27 +257,27 @@
       var ar = live.filter(function (p) { return p.lang === "ar"; }).length, en = live.length - ar;
       var u = umamiOn();
       var stat = function (cls, icon, k, id, s) { return '<div class="card stat ' + cls + '"><div class="k">' + ic(icon) + k + '</div><div class="v" id="' + id + '">' + (u || id === "st-posts" ? "…" : "—") + '</div><div class="s" id="' + id + '-s">' + (s || "") + "</div></div>"; };
-      var h = '<div class="h"><div><h1>أهلاً بيك 👋</h1><p>متابعة سريعة للموقع والمقالات.</p></div></div>' +
+      var h = '<div class="h"><div><h1>Welcome back 👋</h1><p>A quick look at your website and articles.</p></div></div>' +
         '<div class="grid g4">' +
-        stat("pur", "users", "زوار النهارده", "st-today", "") +
-        stat("", "users", "زوار آخر ٧ أيام", "st-week", "") +
-        stat("", "eye", "مشاهدات آخر ٣٠ يوم", "st-month", "") +
-        '<div class="card stat"><div class="k">' + ic("article") + 'المقالات المنشورة</div><div class="v" id="st-posts">' + live.length + '</div><div class="s">عربي ' + ar + " · English " + en + (drafts ? " · مسودات " + drafts : "") + "</div></div>" +
+        stat("pur", "users", "Visitors today", "st-today", "") +
+        stat("", "users", "Visitors, last 7 days", "st-week", "") +
+        stat("", "eye", "Page views, last 30 days", "st-month", "") +
+        '<div class="card stat"><div class="k">' + ic("article") + 'Published articles</div><div class="v" id="st-posts">' + live.length + '</div><div class="s">Arabic ' + ar + " · English " + en + (drafts ? " · Drafts " + drafts : "") + "</div></div>" +
         "</div>";
-      if (!u) h += '<div class="card sec"><h2>' + ic("chart") + 'عداد الزوار مش مربوط لسه</h2><p class="muted" style="margin:0 0 12px">اربطه مرة واحدة، وبعدها هتشوف هنا عدد الزوار، وأكتر الصفحات زيارة، والزوار جايين منين، وموبايل ولا كمبيوتر.</p><button class="btn pri" id="go-umami">' + ic("chart") + 'اربط عداد الزوار</button></div>';
+      if (!u) h += '<div class="card sec"><h2>' + ic("chart") + 'Visitor counter is not connected yet</h2><p class="muted" style="margin:0 0 12px">Connect it once. Then you will see here how many people visit, your top pages, where visitors come from, and phone vs. computer.</p><button class="btn pri" id="go-umami">' + ic("chart") + 'Connect visitor counter</button></div>';
       else h += '<div class="grid g2 sec">' +
-        '<div class="card"><h2>' + ic("chart") + 'الزيارات آخر ١٤ يوم</h2><div id="u-chart">' + loadingHtml("") + '</div></div>' +
-        '<div class="card"><h2>' + ic("eye") + 'أكتر الصفحات زيارة <small class="muted">(٣٠ يوم)</small></h2><div id="u-pages">' + loadingHtml("") + '</div></div>' +
-        '<div class="card"><h2>' + ic("link") + 'الزوار جايين منين <small class="muted">(٣٠ يوم)</small></h2><div id="u-refs">' + loadingHtml("") + '</div></div>' +
-        '<div class="card"><h2>' + ic("phone") + 'الأجهزة <small class="muted">(٣٠ يوم)</small></h2><div id="u-dev">' + loadingHtml("") + '</div></div></div>';
+        '<div class="card"><h2>' + ic("chart") + 'Page views, last 14 days</h2><div id="u-chart">' + loadingHtml("") + '</div></div>' +
+        '<div class="card"><h2>' + ic("eye") + 'Top pages <small class="muted">(30 days)</small></h2><div id="u-pages">' + loadingHtml("") + '</div></div>' +
+        '<div class="card"><h2>' + ic("link") + 'Where visitors come from <small class="muted">(30 days)</small></h2><div id="u-refs">' + loadingHtml("") + '</div></div>' +
+        '<div class="card"><h2>' + ic("phone") + 'Devices <small class="muted">(30 days)</small></h2><div id="u-dev">' + loadingHtml("") + '</div></div></div>';
       h += '<div class="grid g2 sec">' +
-        '<div class="card"><h2>' + ic("posts") + 'آخر المقالات</h2>' + (posts.length ? '<ul class="rank">' + posts.slice(0, 5).map(function (p) {
-          return '<li><span class="t" style="direction:' + (p.lang === "en" ? "ltr" : "rtl") + '">' + esc(p.d.title) + '</span>' + (p.d.draft ? '<span class="tag draft">مسودة</span>' : "") + '<a class="btn sm" href="#/edit/' + p.lang + "/" + encodeURIComponent(p.d.slug) + '">' + ic("edit") + "تعديل</a></li>";
-        }).join("") + "</ul>" : '<p class="muted">مافيش مقالات لسه.</p>') +
-        '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><a class="btn pri sm" href="#/new">' + ic("plus") + 'إضافة مقال</a><a class="btn sm" href="#/posts">كل المقالات</a></div></div>' +
-        '<div class="card"><h2>' + ic("rocket") + 'حالة الموقع</h2><div class="deploy" id="deploy"><span class="dot run"></span><span class="muted">بشوف...</span></div>' +
-        '<p class="muted" style="font-size:13.5px;margin:12px 0 0">أي مقال تحفظه بيظهر على الموقع بعد دقيقة تقريباً.</p>' +
-        '<a class="btn ghost sm" style="margin-top:12px" href="' + SITE + '" target="_blank" rel="noopener">' + ic("globe") + 'افتح الموقع</a></div></div>';
+        '<div class="card"><h2>' + ic("posts") + 'Latest articles</h2>' + (posts.length ? '<ul class="rank">' + posts.slice(0, 5).map(function (p) {
+          return '<li><span class="t" style="direction:' + (p.lang === "en" ? "ltr" : "rtl") + '">' + esc(p.d.title) + '</span>' + (p.d.draft ? '<span class="tag draft">Draft</span>' : "") + '<a class="btn sm" href="#/edit/' + p.lang + "/" + encodeURIComponent(p.d.slug) + '">' + ic("edit") + "Edit</a></li>";
+        }).join("") + "</ul>" : '<p class="muted">No articles yet.</p>') +
+        '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><a class="btn pri sm" href="#/new">' + ic("plus") + 'New article</a><a class="btn sm" href="#/posts">All articles</a></div></div>' +
+        '<div class="card"><h2>' + ic("rocket") + 'Website status</h2><div class="deploy" id="deploy"><span class="dot run"></span><span class="muted">Checking...</span></div>' +
+        '<p class="muted" style="font-size:13.5px;margin:12px 0 0">Articles you save show up on the website in about 1 minute.</p>' +
+        '<a class="btn ghost sm" style="margin-top:12px" href="' + SITE + '" target="_blank" rel="noopener">' + ic("globe") + 'Open website</a></div></div>';
       $("#main").innerHTML = h;
       if ($("#go-umami")) $("#go-umami").onclick = setupUmami;
       watchDeploy();
@@ -286,10 +287,10 @@
   function loadVisitors() {
     var now = Date.now();
     function set(id, v, s) { var el = $("#" + id); if (el) el.textContent = v; if (s != null && $("#" + id + "-s")) $("#" + id + "-s").textContent = s; }
-    var fail = function () { set("st-today", "—"); var c = $("#u-chart"); if (c) c.innerHTML = '<p class="note amber">مش قادر أجيب أرقام الزوار دلوقتي. اتأكد من إعدادات عداد الزوار من القائمة.</p>'; ["u-pages", "u-refs", "u-dev"].forEach(function (i) { if ($("#" + i)) $("#" + i).innerHTML = '<p class="muted">—</p>'; }); };
-    um("/stats", { startAt: dayStart(0), endAt: now }).then(function (s) { set("st-today", num(val(s.visitors)), num(val(s.pageviews)) + " مشاهدة"); }).catch(fail);
-    um("/stats", { startAt: dayStart(6), endAt: now }).then(function (s) { set("st-week", num(val(s.visitors)), num(val(s.pageviews)) + " مشاهدة"); }).catch(function () { set("st-week", "—"); });
-    um("/stats", { startAt: dayStart(29), endAt: now }).then(function (s) { set("st-month", num(val(s.pageviews)), num(val(s.visitors)) + " زائر"); }).catch(function () { set("st-month", "—"); });
+    var fail = function () { set("st-today", "—"); var c = $("#u-chart"); if (c) c.innerHTML = '<p class="note amber">Can’t load visitor numbers right now. Check the visitor counter settings in the menu.</p>'; ["u-pages", "u-refs", "u-dev"].forEach(function (i) { if ($("#" + i)) $("#" + i).innerHTML = '<p class="muted">—</p>'; }); };
+    um("/stats", { startAt: dayStart(0), endAt: now }).then(function (s) { set("st-today", num(val(s.visitors)), num(val(s.pageviews)) + " page views"); }).catch(fail);
+    um("/stats", { startAt: dayStart(6), endAt: now }).then(function (s) { set("st-week", num(val(s.visitors)), num(val(s.pageviews)) + " page views"); }).catch(function () { set("st-week", "—"); });
+    um("/stats", { startAt: dayStart(29), endAt: now }).then(function (s) { set("st-month", num(val(s.pageviews)), num(val(s.visitors)) + " visitors"); }).catch(function () { set("st-month", "—"); });
     um("/pageviews", { startAt: dayStart(13), endAt: now, unit: "day", timezone: TZ }).then(function (r) {
       var m = {}; (r.pageviews || []).forEach(function (p) { m[String(p.x).slice(0, 10)] = +p.y || 0; });
       var days = []; for (var i = 13; i >= 0; i--) { var d = new Date(dayStart(i)); var k = d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); days.push([d, m[k] || 0]); }
@@ -302,38 +303,38 @@
     function list(id, type, label) {
       metric(type, start30).then(function (rows) {
         var el = $("#" + id); if (!el) return;
-        if (!rows || !rows.length) { el.innerHTML = '<p class="muted">لسه مافيش بيانات.</p>'; return; }
+        if (!rows || !rows.length) { el.innerHTML = '<p class="muted">No data yet.</p>'; return; }
         el.innerHTML = '<ul class="rank">' + rows.slice(0, 6).map(function (r) { return '<li><span class="t">' + esc(label(r.x)) + '</span><span class="n">' + num(r.y) + "</span></li>"; }).join("") + "</ul>";
       }).catch(function () { var el = $("#" + id); if (el) el.innerHTML = '<p class="muted">—</p>'; });
     }
     list("u-pages", "path", function (x) { return pageName(x); });
     list("u-refs", "referrer", function (x) { return refName(x); });
-    list("u-dev", "device", function (x) { return { mobile: "موبايل", desktop: "كمبيوتر", laptop: "لابتوب", tablet: "تابلت" }[x] || x || "غير معروف"; });
+    list("u-dev", "device", function (x) { return { mobile: "Phone", desktop: "Computer", laptop: "Laptop", tablet: "Tablet" }[x] || x || "Unknown"; });
   }
   function pageName(x) {
     var p = String(x || "/").replace(/^\/daralamana-site/, "").replace(/\.html$/, "").replace(/\/index$/, "/") || "/";
-    var map = { "/": "الرئيسية", "/en/": "الرئيسية (English)", "/blog": "المدونة", "/services": "الخدمات", "/request": "اطلب ممرضة", "/contact": "تواصل معنا", "/faq": "أسئلة شائعة", "/about": "من نحن", "/careers": "الوظائف" };
+    var map = { "/": "Home (Arabic)", "/en/": "Home (English)", "/blog": "Blog (Arabic)", "/en/blog": "Blog (English)", "/services": "Services", "/en/services": "Services (English)", "/request": "Request a nurse", "/en/request": "Request a nurse (English)", "/contact": "Contact", "/en/contact": "Contact (English)", "/faq": "FAQ", "/en/faq": "FAQ (English)", "/about": "About", "/en/about": "About (English)", "/careers": "Careers", "/en/careers": "Careers (English)" };
     if (map[p]) return map[p];
     var m = p.match(/^\/(en\/)?blog\/(.+)$/);
-    if (m) { var post = findPost(m[1] ? "en" : "ar", m[2]); return "مقال: " + (post ? post.d.title : m[2]); }
+    if (m) { var post = findPost(m[1] ? "en" : "ar", m[2]); return "Article: " + (post ? post.d.title : m[2]); }
     return p;
   }
   function refName(x) {
-    if (!x) return "دخول مباشر";
+    if (!x) return "Direct (typed or saved link)";
     var h = String(x).replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0];
-    var map = { "google": "جوجل", "instagram": "انستجرام", "l.instagram": "انستجرام", "facebook": "فيسبوك", "l.facebook": "فيسبوك", "m.facebook": "فيسبوك", "t.co": "X (تويتر)", "x": "X (تويتر)", "wa.me": "واتساب", "whatsapp": "واتساب", "tiktok": "تيك توك", "snapchat": "سناب شات", "bing": "Bing", "linkedin": "لينكدإن", "youtube": "يوتيوب" };
+    var map = { "google": "Google", "instagram": "Instagram", "l.instagram": "Instagram", "facebook": "Facebook", "l.facebook": "Facebook", "m.facebook": "Facebook", "t.co": "X (Twitter)", "x": "X (Twitter)", "wa.me": "WhatsApp", "whatsapp": "WhatsApp", "tiktok": "TikTok", "snapchat": "Snapchat", "bing": "Bing", "linkedin": "LinkedIn", "youtube": "YouTube" };
     var base = h.replace(/\.(com|net|org|co|qa|ae|sa)(\.[a-z]+)?$/, "");
     return map[base] || map[base.split(".").pop()] || h;
   }
 
-  /* ---------- كل المقالات ---------- */
+  /* ---------- all articles ---------- */
   var listState = { q: "", f: "all" };
   function viewPosts() {
     shell("posts", loadingHtml());
     loadPosts().then(function () {
-      $("#main").innerHTML = '<div class="h"><div><h1>كل المقالات</h1><p id="p-count"></p></div><a class="btn pri" href="#/new">' + ic("plus") + 'إضافة مقال</a></div>' +
-        '<div class="tools"><input class="inp" id="p-q" type="search" placeholder="ابحث في العناوين..." value="' + esc(listState.q) + '">' +
-        '<div class="chips" id="p-f">' + [["all", "الكل"], ["ar", "عربي"], ["en", "English"], ["draft", "مسودات"]].map(function (c) { return '<button class="chip' + (listState.f === c[0] ? " on" : "") + '" data-f="' + c[0] + '">' + c[1] + "</button>"; }).join("") + "</div></div>" +
+      $("#main").innerHTML = '<div class="h"><div><h1>All articles</h1><p id="p-count"></p></div><a class="btn pri" href="#/new">' + ic("plus") + 'New article</a></div>' +
+        '<div class="tools"><input class="inp" id="p-q" type="search" placeholder="Search titles..." value="' + esc(listState.q) + '">' +
+        '<div class="chips" id="p-f">' + [["all", "All"], ["ar", "Arabic"], ["en", "English"], ["draft", "Drafts"]].map(function (c) { return '<button class="chip' + (listState.f === c[0] ? " on" : "") + '" data-f="' + c[0] + '">' + c[1] + "</button>"; }).join("") + "</div></div>" +
         '<div class="plist" id="p-list"></div>';
       $("#p-q").oninput = function () { listState.q = this.value; drawList(); };
       $$("#p-f .chip").forEach(function (b) { b.onclick = function () { listState.f = b.dataset.f; $$("#p-f .chip").forEach(function (x) { x.classList.toggle("on", x === b); }); drawList(); }; });
@@ -346,33 +347,33 @@
       if (f === "ar" || f === "en") { if (p.lang !== f) return false; } else if (f === "draft" && !p.d.draft) return false;
       return !q || (String(p.d.title) + " " + String(p.d.description || "")).toLowerCase().indexOf(q) >= 0;
     });
-    $("#p-count").textContent = S.posts.length + " مقال" + (rows.length !== S.posts.length ? " · ظاهر " + rows.length : "");
+    $("#p-count").textContent = S.posts.length + (S.posts.length === 1 ? " article" : " articles") + (rows.length !== S.posts.length ? " · showing " + rows.length : "");
     var el = $("#p-list");
-    if (!rows.length) { el.innerHTML = '<div class="card empty">' + (S.posts.length ? "مافيش مقالات بالبحث ده." : "مافيش مقالات لسه. دوس «إضافة مقال» واكتب أول مقال.") + "</div>"; return; }
+    if (!rows.length) { el.innerHTML = '<div class="card empty">' + (S.posts.length ? "No articles match your search." : "No articles yet. Tap \"New article\" to write your first one.") + "</div>"; return; }
     el.innerHTML = rows.map(function (p, i) {
       var img = siteUrl(p.d.image || "/assets/img/vitals.webp");
       return '<div class="card prow"><img src="' + esc(img) + '" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">' +
-        '<div class="m"><b dir="' + (p.lang === "en" ? "ltr" : "rtl") + '">' + esc(p.d.title || "(بدون عنوان)") + '</b><small><span class="tag">' + LANGS[p.lang] + '</span>' +
-        (p.d.draft ? '<span class="tag draft">مسودة</span>' : '<span class="tag live">منشور</span>') + "<span>" + esc(fmtDate(p.d.date)) + "</span></small></div>" +
-        '<div class="a"><a class="btn sm" href="#/edit/' + p.lang + "/" + encodeURIComponent(p.d.slug) + '">' + ic("edit") + "تعديل</a>" +
-        (p.d.draft ? "" : '<a class="btn sm ghost" href="' + esc(postUrl(p)) + '" target="_blank" rel="noopener">' + ic("eye") + "عرض</a>") +
-        '<button class="btn sm danger" data-del="' + S.posts.indexOf(p) + '">' + ic("trash") + "حذف</button></div></div>";
+        '<div class="m"><b dir="' + (p.lang === "en" ? "ltr" : "rtl") + '">' + esc(p.d.title || "(No title)") + '</b><small><span class="tag">' + LANGS[p.lang] + '</span>' +
+        (p.d.draft ? '<span class="tag draft">Draft</span>' : '<span class="tag live">Published</span>') + "<span>" + esc(fmtDate(p.d.date)) + "</span></small></div>" +
+        '<div class="a"><a class="btn sm" href="#/edit/' + p.lang + "/" + encodeURIComponent(p.d.slug) + '">' + ic("edit") + "Edit</a>" +
+        (p.d.draft ? "" : '<a class="btn sm ghost" href="' + esc(postUrl(p)) + '" target="_blank" rel="noopener">' + ic("eye") + "View</a>") +
+        '<button class="btn sm danger" data-del="' + S.posts.indexOf(p) + '">' + ic("trash") + "Delete</button></div></div>";
     }).join("");
     $$("[data-del]", el).forEach(function (b) { b.onclick = function () { deletePost(S.posts[+b.dataset.del]); }; });
   }
   function deletePost(p) {
-    confirmBox("حذف المقال؟", "«" + p.d.title + "» هيتشال من الموقع نهائياً. الخطوة دي مش بترجع.", "احذف", true).then(function (ok) {
+    confirmBox("Delete this article?", "\"" + p.d.title + "\" will be removed from the website for good. You can’t undo this.", "Delete", true).then(function (ok) {
       if (!ok) return;
-      toast("جاري الحذف...", false, 0);
-      delFile(p.path, p.sha, "حذف مقال: " + p.d.slug).then(function () {
+      toast("Deleting...", false, 0);
+      delFile(p.path, p.sha, "Delete article: " + p.d.slug).then(function () {
         S.posts = S.posts.filter(function (x) { return x !== p; });
-        toast("اتحذف ✓ وهيختفي من الموقع خلال دقيقة");
+        toast("Deleted ✓ It will disappear from the website in about 1 minute.");
         if (location.hash.indexOf("#/edit") === 0) { S.dirty = false; location.hash = "#/posts"; } else drawList();
-      }).catch(function () { toast("الحذف ماتمش، جرّب تاني.", true); });
+      }).catch(function () { toast("Couldn’t delete. Please try again.", true); });
     });
   }
 
-  /* ---------- المحرر: Markdown ⇄ HTML ---------- */
+  /* ---------- editor: Markdown <-> HTML ---------- */
   function mdInline(t) {
     t = esc(t);
     t = t.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, function (_, a, s) { return '<img src="' + siteUrl(s) + '" data-src="' + s + '" alt="' + a + '">'; });
@@ -459,11 +460,10 @@
       });
     })(root);
     flushRun();
-    // سطر عادي بيبدأ برموز ماركداون يتقري غلط، فنفصله
     return out.map(function (b) { return b.split("\n").map(function (l) { return l; }).join("\n"); }).join("\n\n").trim();
   }
 
-  /* ---------- الصور ---------- */
+  /* ---------- images ---------- */
   function shrink(file, maxW) {
     if (!/^image\//.test(file.type) || /gif|svg/.test(file.type)) return Promise.resolve(file);
     return new Promise(function (res) {
@@ -487,11 +487,11 @@
   function uploadImage(blob, slug) {
     var ext = /png/.test(blob.type) ? "png" : /gif/.test(blob.type) ? "gif" : /webp/.test(blob.type) ? "webp" : "jpg";
     var name = (slug || "img") + "-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5) + "." + ext;
-    return blobB64(blob).then(function (b64) { return putFile(IMG_DIR + "/" + name, b64, "رفع صورة: " + name); })
+    return blobB64(blob).then(function (b64) { return putFile(IMG_DIR + "/" + name, b64, "Upload image: " + name); })
       .then(function () { return "/assets/img/blog/" + name; });
   }
 
-  /* ---------- الرابط من العنوان ---------- */
+  /* ---------- link (slug) from the title ---------- */
   var TR = { "ا": "a", "أ": "a", "إ": "e", "آ": "a", "ب": "b", "ت": "t", "ث": "th", "ج": "j", "ح": "h", "خ": "kh", "د": "d", "ذ": "th", "ر": "r", "ز": "z", "س": "s", "ش": "sh",
     "ص": "s", "ض": "d", "ط": "t", "ظ": "z", "ع": "a", "غ": "gh", "ف": "f", "ق": "q", "ك": "k", "ل": "l", "م": "m", "ن": "n", "ه": "h", "ة": "a", "و": "w", "ي": "y", "ى": "a",
     "ئ": "e", "ؤ": "o", "ء": "", "ـ": "" };
@@ -504,45 +504,45 @@
     return s;
   }
 
-  /* ---------- المحرر ---------- */
+  /* ---------- editor ---------- */
   var E = null;
   function viewEditor(L, slug) {
     shell("edit", loadingHtml());
     loadPosts().then(function () {
       var orig = slug ? findPost(L, slug) : null;
-      if (slug && !orig) { $("#main").innerHTML = '<div class="card empty">المقال ده مش موجود. يمكن اتحذف.<br><br><a class="btn" href="#/posts">كل المقالات</a></div>'; return; }
+      if (slug && !orig) { $("#main").innerHTML = '<div class="card empty">This article doesn’t exist. It may have been deleted.<br><br><a class="btn" href="#/posts">All articles</a></div>'; return; }
       var d = orig ? orig.d : { title: "", description: "", date: today(), image: "", image_alt: "", body: "", draft: false };
       E = { orig: orig, lang: orig ? orig.lang : (listState.f === "en" ? "en" : "ar"), cover: d.image || "", coverBlob: null, slugTouched: !!orig, pending: {} };
-      var title = orig ? "تعديل مقال" : "مقال جديد";
+      var title = orig ? "Edit article" : "New article";
       $("#main").innerHTML =
-        '<div class="h"><div><h1>' + title + '</h1><p>' + (orig ? (orig.d.draft ? "المقال ده مسودة ومش ظاهر على الموقع." : "المقال ده منشور على الموقع.") : "اكتب المقال واختار صورة، وبعدين دوس نشر.") + '</p></div>' +
-        '<a class="btn ghost sm" href="#/posts">رجوع للمقالات</a></div>' +
+        '<div class="h"><div><h1>' + title + '</h1><p>' + (orig ? (orig.d.draft ? "This article is a draft. It is not on the website." : "This article is live on the website.") : "Write your article, add a photo, then tap Publish.") + '</p></div>' +
+        '<a class="btn ghost sm" href="#/posts">Back to articles</a></div>' +
         '<div class="ed"><div>' +
         '<div class="card">' +
-        '<label class="fld"><span>العنوان</span><input class="inp title-inp" id="e-title" maxlength="140" placeholder="مثال: كيف تجهز البيت لاستقبال المريض بعد المستشفى؟" value="' + esc(d.title) + '"></label>' +
-        '<label class="fld"><span>وصف قصير <em class="count" id="e-dcount"></em></span><textarea class="inp" id="e-desc" rows="2" placeholder="سطر أو اتنين بيظهروا تحت العنوان وفي نتايج جوجل.">' + esc(d.description || "") + '</textarea><small>يفضّل من ١٢٠ لـ ١٦٠ حرف.</small></label>' +
-        '<div class="fld" style="margin:0"><span>المقال</span>' +
-        '<div class="tb" id="e-tb" role="toolbar" aria-label="أدوات التنسيق">' +
-        '<button type="button" data-cmd="h2" title="عنوان كبير">عنوان</button><button type="button" data-cmd="h3" title="عنوان فرعي">فرعي</button><button type="button" data-cmd="p" title="نص عادي">نص</button><span class="sep"></span>' +
-        '<button type="button" data-cmd="bold" title="عريض"><b>B</b></button><button type="button" data-cmd="italic" title="مائل"><i>I</i></button><span class="sep"></span>' +
-        '<button type="button" data-cmd="ul" title="قائمة نقط">' + ic("ul") + '</button><button type="button" data-cmd="ol" title="قائمة أرقام">' + ic("ol") + '</button><button type="button" data-cmd="quote" title="اقتباس / ملحوظة">' + ic("quote") + '</button><span class="sep"></span>' +
-        '<button type="button" data-cmd="link" title="رابط">' + ic("link") + '</button><button type="button" data-cmd="image" title="صورة جوه المقال">' + ic("image") + "</button></div>" +
-        '<div class="rte" id="e-body" contenteditable="true" data-ph="ابدأ اكتب المقال هنا... استخدم زرار «عنوان» للعناوين." spellcheck="true"></div></div>' +
+        '<label class="fld"><span>Title</span><input class="inp title-inp" id="e-title" maxlength="140" placeholder="Example: How to get your home ready after a hospital stay" value="' + esc(d.title) + '"></label>' +
+        '<label class="fld"><span>Short description <em class="count" id="e-dcount"></em></span><textarea class="inp" id="e-desc" rows="2" placeholder="1 or 2 lines. Shown under the title and in Google results.">' + esc(d.description || "") + '</textarea><small>Best between 120 and 160 characters.</small></label>' +
+        '<div class="fld" style="margin:0"><span>Article</span>' +
+        '<div class="tb" id="e-tb" role="toolbar" aria-label="Formatting tools">' +
+        '<button type="button" data-cmd="h2" title="Big heading">Heading</button><button type="button" data-cmd="h3" title="Small heading">Sub</button><button type="button" data-cmd="p" title="Normal text">Text</button><span class="sep"></span>' +
+        '<button type="button" data-cmd="bold" title="Bold"><b>B</b></button><button type="button" data-cmd="italic" title="Italic"><i>I</i></button><span class="sep"></span>' +
+        '<button type="button" data-cmd="ul" title="Bullet list">' + ic("ul") + '</button><button type="button" data-cmd="ol" title="Numbered list">' + ic("ol") + '</button><button type="button" data-cmd="quote" title="Quote / note">' + ic("quote") + '</button><span class="sep"></span>' +
+        '<button type="button" data-cmd="link" title="Link">' + ic("link") + '</button><button type="button" data-cmd="image" title="Photo in the article">' + ic("image") + "</button></div>" +
+        '<div class="rte" id="e-body" contenteditable="true" data-ph="Start writing here... Use the Heading button for headings." spellcheck="true"></div></div>' +
         "</div></div>" +
         '<aside class="ed-side">' +
-        '<div class="card ed-actions side"><button class="btn pri" data-save="pub">' + ic("rocket") + (orig && !orig.d.draft ? "حفظ التعديلات" : "نشر المقال") + '</button><button class="btn" data-save="draft">حفظ كمسودة</button>' +
-        (orig ? '<button class="btn danger sm" id="e-del">' + ic("trash") + "حذف المقال</button>" : "") + "</div>" +
-        '<div class="card"><h2>' + ic("image") + 'صورة المقال</h2><div class="cover" id="e-cover" role="button" tabindex="0"></div>' +
-        '<div class="cover-act"><button class="btn sm" id="e-cover-pick">اختار صورة</button><button class="btn sm ghost" id="e-cover-rm">شيل الصورة</button></div>' +
-        '<label class="fld" style="margin:12px 0 0"><span>وصف الصورة (لجوجل)</span><input class="inp" id="e-alt" placeholder="مثال: ممرضة تقيس ضغط مريض في البيت" value="' + esc(d.image_alt || "") + '"></label></div>' +
-        '<div class="card"><h2>' + ic("globe") + 'اللغة والتاريخ</h2>' +
-        (orig ? '<p style="margin:0 0 12px">اللغة: <span class="tag">' + LANGS[E.lang] + "</span></p>" : '<div class="seg" id="e-lang" style="margin-bottom:14px"><button type="button" data-l="ar">عربي</button><button type="button" data-l="en">English</button></div>') +
-        '<label class="fld"><span>تاريخ النشر</span><input class="inp" type="date" id="e-date" value="' + esc(String(d.date || today()).slice(0, 10)) + '"></label>' +
-        '<label class="switch"><span>مسودة (مش ظاهر على الموقع)</span><input type="checkbox" id="e-draft"' + (d.draft ? " checked" : "") + "></label>" +
-        '<details class="adv" style="margin-top:14px"><summary>رابط المقال</summary><label class="fld" style="margin:10px 0 0"><input class="inp ltr" id="e-slug" dir="ltr" placeholder="how-to-prepare-home" value="' + esc(d.slug || "") + '">' +
-        '<small>حروف إنجليزي صغيرة وأرقام وشرطات بس. بيتعمل لوحده من العنوان. استخدم نفس الرابط للمقال العربي ونسخته الإنجليزي.</small><small dir="ltr" id="e-url" style="word-break:break-all"></small></label></details>' +
+        '<div class="card ed-actions side"><button class="btn pri" data-save="pub">' + ic("rocket") + (orig && !orig.d.draft ? "Save changes" : "Publish") + '</button><button class="btn" data-save="draft">Save as draft</button>' +
+        (orig ? '<button class="btn danger sm" id="e-del">' + ic("trash") + "Delete article</button>" : "") + "</div>" +
+        '<div class="card"><h2>' + ic("image") + 'Cover photo</h2><div class="cover" id="e-cover" role="button" tabindex="0"></div>' +
+        '<div class="cover-act"><button class="btn sm" id="e-cover-pick">Choose photo</button><button class="btn sm ghost" id="e-cover-rm">Remove</button></div>' +
+        '<label class="fld" style="margin:12px 0 0"><span>Photo description (for Google)</span><input class="inp" id="e-alt" placeholder="Example: A nurse checking a patient’s blood pressure at home" value="' + esc(d.image_alt || "") + '"></label></div>' +
+        '<div class="card"><h2>' + ic("globe") + 'Language and date</h2>' +
+        (orig ? '<p style="margin:0 0 12px">Language: <span class="tag">' + LANGS[E.lang] + "</span></p>" : '<div class="seg" id="e-lang" style="margin-bottom:14px"><button type="button" data-l="ar">Arabic</button><button type="button" data-l="en">English</button></div>') +
+        '<label class="fld"><span>Publish date</span><input class="inp" type="date" id="e-date" value="' + esc(String(d.date || today()).slice(0, 10)) + '"></label>' +
+        '<label class="switch"><span>Draft (hidden from the website)</span><input type="checkbox" id="e-draft"' + (d.draft ? " checked" : "") + "></label>" +
+        '<details class="adv" style="margin-top:14px"><summary>Article link</summary><label class="fld" style="margin:10px 0 0"><input class="inp ltr" id="e-slug" dir="ltr" placeholder="how-to-prepare-home" value="' + esc(d.slug || "") + '">' +
+        '<small>Small English letters, numbers and dashes only. It is made from the title for you. Use the same link for the Arabic article and its English version.</small><small dir="ltr" id="e-url" style="word-break:break-all"></small></label></details>' +
         "</div></aside></div>" +
-        '<div class="ed-bar"><button class="btn" data-save="draft">مسودة</button><button class="btn pri" data-save="pub">' + ic("rocket") + (orig && !orig.d.draft ? "حفظ" : "نشر") + "</button></div>";
+        '<div class="ed-bar"><button class="btn" data-save="draft">Draft</button><button class="btn pri" data-save="pub">' + ic("rocket") + (orig && !orig.d.draft ? "Save" : "Publish") + "</button></div>";
 
       var body = $("#e-body");
       body.innerHTML = mdToHtml(d.body);
@@ -569,11 +569,11 @@
     E.lang = L; var b = $("#e-body"); b.dir = L === "en" ? "ltr" : "rtl"; $("#e-title").dir = $("#e-desc").dir = b.dir;
     if ($("#e-lang")) $$("#e-lang button").forEach(function (x) { x.classList.toggle("on", x.dataset.l === L); });
   }
-  function countDesc() { var n = $("#e-desc").value.trim().length, c = $("#e-dcount"); c.textContent = n + " حرف"; c.className = "count" + (n > 170 ? " over" : ""); }
+  function countDesc() { var n = $("#e-desc").value.trim().length, c = $("#e-dcount"); c.textContent = n + " characters"; c.className = "count" + (n > 170 ? " over" : ""); }
   function showUrl() { var s = $("#e-slug").value.trim() || slugify($("#e-title").value); $("#e-url").textContent = s ? SITE + (E.lang === "en" ? "en/" : "") + "blog/" + s + ".html" : ""; }
   function drawCover() {
     var c = $("#e-cover");
-    c.innerHTML = E.cover ? '<img src="' + esc(E.cover.indexOf("blob:") === 0 ? E.cover : siteUrl(E.cover)) + '" alt="">' : ic("image") + "<b>دوس واختار صورة</b><small>من الموبايل أو الكمبيوتر. الصورة بتتصغّر لوحدها.</small>";
+    c.innerHTML = E.cover ? '<img src="' + esc(E.cover.indexOf("blob:") === 0 ? E.cover : siteUrl(E.cover)) + '" alt="">' : ic("image") + "<b>Tap to choose a photo</b><small>From your phone or computer. We make it smaller for you.</small>";
     $("#e-cover-rm").hidden = !E.cover;
   }
   function setupToolbar(body) {
@@ -591,7 +591,7 @@
       });
     }
     $$("#e-tb [data-cmd]").forEach(function (btn) {
-      btn.addEventListener("mousedown", function (e) { e.preventDefault(); });  // ما نضيعش التحديد
+      btn.addEventListener("mousedown", function (e) { e.preventDefault(); });  // keep the text selection
       btn.onclick = function () {
         var c = btn.dataset.cmd; restore();
         if (c === "h2" || c === "h3") document.execCommand("formatBlock", false, block() === c.toUpperCase() ? "p" : c);
@@ -613,7 +613,7 @@
       S.dirty = true;
     });
     body.addEventListener("keydown", function (e) {
-      // Enter جوه اقتباس أو عنوان يرجّع لنص عادي
+      // Enter inside a quote or heading goes back to normal text
       if (e.key === "Enter" && !e.shiftKey && /^(BLOCKQUOTE|H2|H3)$/.test(block())) {
         e.preventDefault(); document.execCommand("insertParagraph"); document.execCommand("formatBlock", false, "p"); S.dirty = true; return;
       }
@@ -622,13 +622,13 @@
   }
   function addLink(restore) {
     var sel = getSelection(), txt = sel.toString();
-    modal('<h1>إضافة رابط</h1><label class="fld"><span>الرابط</span><input class="inp ltr" id="l-url" dir="ltr" placeholder="https://..." inputmode="url"></label>' +
-      (txt ? "" : '<label class="fld"><span>النص اللي هيظهر</span><input class="inp" id="l-txt" placeholder="مثال: اطلب ممرضة"></label>') +
-      '<div class="err" id="l-err"></div><div class="row"><button class="btn pri" id="l-ok">إضافة</button><button class="btn ghost" id="l-no">إلغاء</button></div>',
+    modal('<h1>Add a link</h1><label class="fld"><span>Link</span><input class="inp ltr" id="l-url" dir="ltr" placeholder="https://..." inputmode="url"></label>' +
+      (txt ? "" : '<label class="fld"><span>Text to show</span><input class="inp" id="l-txt" placeholder="Example: Request a nurse"></label>') +
+      '<div class="err" id="l-err"></div><div class="row"><button class="btn pri" id="l-ok">Add</button><button class="btn ghost" id="l-no">Cancel</button></div>',
       function (box, close) {
         $("#l-no", box).onclick = close;
         $("#l-ok", box).onclick = function () {
-          var u = $("#l-url", box).value.trim(); if (!u) { $("#l-err", box).textContent = "اكتب الرابط."; return; }
+          var u = $("#l-url", box).value.trim(); if (!u) { $("#l-err", box).textContent = "Please type the link."; return; }
           if (!/^(https?:|mailto:|tel:|\/|#)/.test(u)) u = /^[\w.-]+\.[a-z]{2,}/i.test(u) ? "https://" + u : u;
           var t2 = $("#l-txt", box) ? $("#l-txt", box).value.trim() || u : null;
           close(); restore();
@@ -652,23 +652,23 @@
   function save(asDraft) {
     var title = $("#e-title").value.trim(), desc = $("#e-desc").value.replace(/\s+/g, " ").trim(), body = $("#e-body");
     var slug = slugify($("#e-slug").value.trim()) || slugify(title);
-    if (!title) { toast("اكتب عنوان للمقال الأول.", true); $("#e-title").focus(); return; }
-    if (!asDraft && !body.textContent.trim() && !$("img", body)) { toast("المقال فاضي. اكتب المقال أو احفظه كمسودة.", true); body.focus(); return; }
-    if (!asDraft && !desc) { toast("اكتب وصف قصير للمقال (بيظهر في جوجل).", true); $("#e-desc").focus(); return; }
+    if (!title) { toast("Please add a title first.", true); $("#e-title").focus(); return; }
+    if (!asDraft && !body.textContent.trim() && !$("img", body)) { toast("The article is empty. Write something, or save it as a draft.", true); body.focus(); return; }
+    if (!asDraft && !desc) { toast("Please add a short description (it shows in Google).", true); $("#e-desc").focus(); return; }
     var L = E.lang, orig = E.orig;
     if (!slug) slug = "post-" + Date.now().toString(36);
     var taken = function (s) { return (S.posts || []).some(function (p) { return p.lang === L && p.d.slug === s && p !== orig; }); };
     if (taken(slug)) { var n = 2; while (taken(slug + "-" + n)) n++; slug = slug + "-" + n; }
     $("#e-slug").value = slug;
     var btns = $$("[data-save]"); btns.forEach(function (b) { b.disabled = true; });
-    toast("جاري الحفظ...", false, 0);
+    toast("Saving...", false, 0);
     var image = E.cover && E.cover.indexOf("blob:") !== 0 ? E.cover : "";
     var steps = Promise.resolve();
-    if (E.coverBlob) steps = steps.then(function () { toast("جاري رفع صورة المقال...", false, 0); return uploadImage(E.coverBlob, slug).then(function (p) { image = p; E.cover = p; E.coverBlob = null; }); });
+    if (E.coverBlob) steps = steps.then(function () { toast("Uploading the cover photo...", false, 0); return uploadImage(E.coverBlob, slug).then(function (p) { image = p; E.cover = p; E.coverBlob = null; }); });
     $$("img[data-pid]", body).forEach(function (img) {
       steps = steps.then(function () {
         var blob = E.pending[img.dataset.pid]; if (!blob) { img.remove(); return; }
-        toast("جاري رفع الصور...", false, 0);
+        toast("Uploading photos...", false, 0);
         return uploadImage(blob, slug).then(function (p) { img.setAttribute("data-src", p); img.removeAttribute("data-pid"); img.classList.remove("pending"); delete E.pending[img.dataset.pid]; });
       });
     });
@@ -681,121 +681,121 @@
       if (!d.image) delete d.image; if (!d.image_alt) delete d.image_alt;
       var path = "content/blog/" + L + "/" + slug + ".json", json = JSON.stringify(d, null, 2) + "\n";
       var same = orig && orig.path === path;
-      var msg = (orig ? "تعديل مقال: " : "مقال جديد: ") + slug;
+      var msg = (orig ? "Edit article: " : "New article: ") + slug;
       return putFile(path, textB64(json), msg, same ? orig.sha : undefined).then(function (sha) {
         var rec = { lang: L, path: path, sha: sha, d: d };
-        var after = orig && !same ? delFile(orig.path, orig.sha, "نقل مقال: " + orig.d.slug + " ← " + slug) : Promise.resolve();
+        var after = orig && !same ? delFile(orig.path, orig.sha, "Move article: " + orig.d.slug + " -> " + slug) : Promise.resolve();
         return after.then(function () {
           S.posts = sortPosts((S.posts || []).filter(function (p) { return p !== orig; }).concat([rec]));
           S.dirty = false;
-          toast(asDraft ? "اتحفظ كمسودة ✓ (مش ظاهر على الموقع)" : "اتحفظ ✓ وهيظهر على الموقع خلال دقيقة تقريباً", false, 4500);
+          toast(asDraft ? "Saved as draft ✓ (not on the website)" : "Saved ✓ It will be on the website in about 1 minute.", false, 4500);
           location.hash = "#/posts";
         });
       });
     }).catch(function (e) {
       btns.forEach(function (b) { b.disabled = false; });
-      toast(e && e.status === 422 ? "فيه مقال تاني بنفس الرابط. غيّر رابط المقال وجرّب تاني." : e && e.status === 409 ? "المقال اتعدّل من مكان تاني. افتحه من جديد وجرّب." : "الحفظ ماتمش. اتأكد من النت وجرّب تاني.", true, 6000);
+      toast(e && e.status === 422 ? "Another article already uses this link. Change the article link and try again." : e && e.status === 409 ? "This article was changed somewhere else. Open it again and retry." : "Couldn’t save. Check your internet and try again.", true, 6000);
     });
   }
 
-  /* ---------- كلمة المرور + عداد الزوار ---------- */
+  /* ---------- password + visitor counter ---------- */
   function changePassword() {
     $("#menu-pop") && ($("#menu-pop").hidden = true);
-    modal('<h1>تغيير كلمة المرور</h1><p class="muted">كلمة المرور الجديدة بتشتغل خلال دقيقة أو اتنين.</p>' +
-      '<label class="fld"><span>كلمة المرور الجديدة (١٠ حروف على الأقل)</span><input class="inp ltr" type="password" id="c-1" autocomplete="new-password"></label>' +
-      '<label class="fld"><span>تأكيد كلمة المرور</span><input class="inp ltr" type="password" id="c-2" autocomplete="new-password"></label>' +
-      '<div class="err" id="c-err"></div><div class="row"><button class="btn pri" id="c-ok">حفظ</button><button class="btn ghost" id="c-no">إلغاء</button></div>',
+    modal('<h1>Change password</h1><p class="muted">Your new password starts working in 1 to 2 minutes.</p>' +
+      '<label class="fld"><span>New password (at least 10 characters)</span><input class="inp ltr" type="password" id="c-1" autocomplete="new-password"></label>' +
+      '<label class="fld"><span>Type it again</span><input class="inp ltr" type="password" id="c-2" autocomplete="new-password"></label>' +
+      '<div class="err" id="c-err"></div><div class="row"><button class="btn pri" id="c-ok">Save</button><button class="btn ghost" id="c-no">Cancel</button></div>',
       function (box, close) {
         $("#c-no", box).onclick = close;
         $("#c-ok", box).onclick = function () {
           var a = $("#c-1", box).value, b = $("#c-2", box).value, err = $("#c-err", box), btn = this;
-          if (a.length < 10) { err.textContent = "كلمة المرور لازم ١٠ حروف على الأقل."; return; }
-          if (a !== b) { err.textContent = "كلمتين المرور مش زي بعض."; return; }
-          btn.disabled = true; err.className = "err"; err.textContent = "جاري الحفظ...";
-          saveAuth(S.vault, a, "تغيير كلمة مرور لوحة التحكم").then(function () { close(); toast("اتغيّرت كلمة المرور ✓"); })
-            .catch(function () { btn.disabled = false; err.textContent = "حصل خطأ، جرّب تاني."; });
+          if (a.length < 10) { err.textContent = "The password needs at least 10 characters."; return; }
+          if (a !== b) { err.textContent = "The two passwords don’t match."; return; }
+          btn.disabled = true; err.className = "err"; err.textContent = "Saving...";
+          saveAuth(S.vault, a, "Change admin password").then(function () { close(); toast("Password changed ✓"); })
+            .catch(function () { btn.disabled = false; err.textContent = "Something went wrong. Please try again."; });
         };
       });
   }
   function setupUmami() {
     $("#menu-pop") && ($("#menu-pop").hidden = true);
-    modal('<h1>ربط عداد الزوار</h1><p class="muted">بنستخدم Umami (مجاني). الخطوات دي مرة واحدة بس:</p>' +
+    modal('<h1>Connect visitor counter</h1><p class="muted">We use Umami (free). You only do this once:</p>' +
       '<ol style="margin:0 0 16px;padding-inline-start:20px;font-size:14px;line-height:1.9">' +
-      '<li>ادخل <a href="https://cloud.umami.is/signup" target="_blank" rel="noopener">cloud.umami.is</a> واعمل حساب مجاني.</li>' +
-      '<li>دوس <b>Add website</b> واكتب اسم الموقع ورابطه، وانسخ الـ <b>Website ID</b>.</li>' +
-      '<li>من <b>Settings ← API keys</b> اعمل مفتاح جديد وانسخه.</li></ol>' +
+      '<li>Go to <a href="https://cloud.umami.is/signup" target="_blank" rel="noopener">cloud.umami.is</a> and make a free account.</li>' +
+      '<li>Tap <b>Add website</b>, type the website name and link, then copy the <b>Website ID</b>.</li>' +
+      '<li>Go to <b>Settings → API keys</b>, make a new key and copy it.</li></ol>' +
       '<label class="fld"><span>Website ID</span><input class="inp ltr" id="u-id" dir="ltr" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" value="' + esc(umamiId()) + '"></label>' +
-      '<label class="fld"><span>API key</span><input class="inp ltr" id="u-key" dir="ltr" type="password" autocomplete="off" placeholder="' + (S.vault.umami ? "محفوظ (اكتب مفتاح جديد لو عايز تغيّره)" : "api_...") + '"></label>' +
-      '<label class="fld"><span>كلمة مرور لوحة التحكم</span><input class="inp ltr" id="u-pass" type="password" autocomplete="current-password"><small>علشان نحفظ المفتاح متشفّر.</small></label>' +
-      '<div class="err" id="u-err"></div><div class="row"><button class="btn pri" id="u-ok">حفظ</button><button class="btn ghost" id="u-no">إلغاء</button></div>',
+      '<label class="fld"><span>API key</span><input class="inp ltr" id="u-key" dir="ltr" type="password" autocomplete="off" placeholder="' + (S.vault.umami ? "Saved (type a new key to change it)" : "api_...") + '"></label>' +
+      '<label class="fld"><span>Your dashboard password</span><input class="inp ltr" id="u-pass" type="password" autocomplete="current-password"><small>We need it to save the key safely (encrypted).</small></label>' +
+      '<div class="err" id="u-err"></div><div class="row"><button class="btn pri" id="u-ok">Save</button><button class="btn ghost" id="u-no">Cancel</button></div>',
       function (box, close) {
         $("#u-no", box).onclick = close;
         $("#u-ok", box).onclick = function () {
           var id = $("#u-id", box).value.trim(), key = $("#u-key", box).value.trim() || S.vault.umami || "", pass = $("#u-pass", box).value, err = $("#u-err", box), btn = this;
-          if (!/^[0-9a-f-]{36}$/i.test(id)) { err.textContent = "الـ Website ID شكله غلط. انسخه زي ما هو من Umami."; return; }
-          if (!key) { err.textContent = "حط الـ API key."; return; }
-          if (!pass) { err.textContent = "اكتب كلمة مرور لوحة التحكم."; return; }
-          btn.disabled = true; err.className = "err"; err.textContent = "بتأكد من البيانات...";
+          if (!/^[0-9a-f-]{36}$/i.test(id)) { err.textContent = "This Website ID doesn’t look right. Copy it exactly from Umami."; return; }
+          if (!key) { err.textContent = "Please add the API key."; return; }
+          if (!pass) { err.textContent = "Please type your dashboard password."; return; }
+          btn.disabled = true; err.className = "err"; err.textContent = "Checking...";
           fetchAuthBox().then(function (box2) { return box2 ? unseal(box2, pass) : Promise.reject("nobox"); })
-            .catch(function () { throw { msg: "كلمة مرور لوحة التحكم غلط." }; })
+            .catch(function () { throw { msg: "Wrong dashboard password." }; })
             .then(function () {
               return fetch(UMAMI_API + "/websites/" + id + "/stats?startAt=" + dayStart(0) + "&endAt=" + Date.now(), { headers: { "x-umami-api-key": key, Accept: "application/json" } })
-                .catch(function () { throw { msg: "مش قادر أوصل لـ Umami. اتأكد من النت وجرّب تاني." }; })
-                .then(function (r) { if (!r.ok) throw { msg: r.status === 401 || r.status === 403 ? "الـ API key مش شغال أو مالوش صلاحية على الموقع ده." : r.status === 404 ? "الـ Website ID مش موجود." : "Umami رد بخطأ (" + r.status + ")." }; });
+                .catch(function () { throw { msg: "Can’t reach Umami. Check your internet and try again." }; })
+                .then(function (r) { if (!r.ok) throw { msg: r.status === 401 || r.status === 403 ? "This API key doesn’t work, or it can’t access this website." : r.status === 404 ? "This Website ID was not found." : "Umami returned an error (" + r.status + ")." }; });
             })
             .then(function () {
-              err.textContent = "جاري الحفظ...";
+              err.textContent = "Saving...";
               var v = { token: S.vault.token, umami: key };
-              return saveAuth(v, pass, "ربط عداد الزوار").then(function () { saveSession(v); return getFile(CFG_FILE); }).then(function (f) {
+              return saveAuth(v, pass, "Connect visitor counter").then(function () { saveSession(v); return getFile(CFG_FILE); }).then(function (f) {
                 var t = f.text;
                 if (/UMAMI_WEBSITE_ID:\s*"[^"]*"/.test(t)) t = t.replace(/UMAMI_WEBSITE_ID:\s*"[^"]*"/, 'UMAMI_WEBSITE_ID: "' + id + '"');
                 else t = t.replace(/(GA4_ID:[^\n]*\n)/, '$1  UMAMI_WEBSITE_ID: "' + id + '",  // عداد الزوار (Umami) — بيتظبط من لوحة التحكم\n');
-                return t === f.text ? null : putFile(CFG_FILE, textB64(t), "ربط عداد الزوار", f.sha);
+                return t === f.text ? null : putFile(CFG_FILE, textB64(t), "Connect visitor counter", f.sha);
               });
             })
-            .then(function () { window.SITE_CONFIG = window.SITE_CONFIG || {}; window.SITE_CONFIG.UMAMI_WEBSITE_ID = id; close(); toast("اتربط عداد الزوار ✓ الأرقام هتبدأ تتعد بعد ما الموقع يتحدّث (دقيقة)", false, 5000); route(true); })
-            .catch(function (e) { btn.disabled = false; err.textContent = (e && e.msg) || "حصل خطأ، جرّب تاني."; });
+            .then(function () { window.SITE_CONFIG = window.SITE_CONFIG || {}; window.SITE_CONFIG.UMAMI_WEBSITE_ID = id; close(); toast("Visitor counter connected ✓ Counting starts after the website updates (about 1 minute).", false, 5000); route(true); })
+            .catch(function (e) { btn.disabled = false; err.textContent = (e && e.msg) || "Something went wrong. Please try again."; });
         };
       });
   }
 
-  /* ---------- الدخول ---------- */
+  /* ---------- login ---------- */
   function viewLogin(box, msg) {
     app.innerHTML = '<div class="login">' +
-      '<form class="g-card" id="g-login"' + (box ? "" : " hidden") + '><img src="../assets/img/logo-icon.png" alt=""><h1>لوحة تحكم دار الأمانة</h1><p>اكتب كلمة المرور للدخول</p>' +
-      '<label class="fld"><span>كلمة المرور</span><input class="inp ltr" id="g-pass" type="password" autocomplete="current-password" required></label>' +
-      '<div class="err" id="g-err">' + esc(msg || "") + '</div><button class="btn pri" type="submit">دخول</button><button class="btn" type="button" id="g-renew">تحديث توكن GitHub</button></form>' +
-      '<form class="g-card" id="g-setup"' + (box ? " hidden" : "") + '><img src="../assets/img/logo-icon.png" alt=""><h1>' + (box ? "تحديث توكن GitHub" : "إعداد الدخول لأول مرة") + '</h1><p>حط توكن GitHub واختار كلمة مرور.</p>' +
-      '<label class="fld"><span>توكن GitHub</span><input class="inp ltr" id="s-token" type="password" autocomplete="off" required></label>' +
-      '<label class="fld"><span>كلمة المرور (١٠ حروف على الأقل)</span><input class="inp ltr" id="s-pass" type="password" autocomplete="new-password" minlength="10" required></label>' +
-      '<label class="fld"><span>تأكيد كلمة المرور</span><input class="inp ltr" id="s-pass2" type="password" autocomplete="new-password" minlength="10" required></label>' +
-      '<div class="err" id="s-err"></div><button class="btn pri" type="submit">حفظ وتسجيل الدخول</button>' + (box ? '<button class="btn" type="button" id="s-back">رجوع</button>' : "") + "</form>" +
-      '<div class="dev-sig"><span>© ' + new Date().getFullYear() + ' أحمد الجمل</span><a href="https://wa.me/971507761628?text=' + encodeURIComponent("مرحباً أحمد، تواصلت معك من لوحة تحكم دار الأمانة") + '" target="_blank" rel="noopener">+971 50 776 1628</a></div></div>';
+      '<form class="g-card" id="g-login"' + (box ? "" : " hidden") + '><img src="../assets/img/logo-icon.png" alt=""><h1>Dar Alamana Dashboard</h1><p>Type your password to log in</p>' +
+      '<label class="fld"><span>Password</span><input class="inp ltr" id="g-pass" type="password" autocomplete="current-password" required></label>' +
+      '<div class="err" id="g-err">' + esc(msg || "") + '</div><button class="btn pri" type="submit">Log in</button><button class="btn" type="button" id="g-renew">Update GitHub token</button></form>' +
+      '<form class="g-card" id="g-setup"' + (box ? " hidden" : "") + '><img src="../assets/img/logo-icon.png" alt=""><h1>' + (box ? "Update GitHub token" : "First-time setup") + '</h1><p>Paste your GitHub token and choose a password.</p>' +
+      '<label class="fld"><span>GitHub token</span><input class="inp ltr" id="s-token" type="password" autocomplete="off" required></label>' +
+      '<label class="fld"><span>Password (at least 10 characters)</span><input class="inp ltr" id="s-pass" type="password" autocomplete="new-password" minlength="10" required></label>' +
+      '<label class="fld"><span>Type it again</span><input class="inp ltr" id="s-pass2" type="password" autocomplete="new-password" minlength="10" required></label>' +
+      '<div class="err" id="s-err"></div><button class="btn pri" type="submit">Save and log in</button>' + (box ? '<button class="btn" type="button" id="s-back">Back</button>' : "") + "</form>" +
+      '<div class="dev-sig"><span>© ' + new Date().getFullYear() + ' Ahmed Al Gamal</span><a href="https://wa.me/971507761628?text=' + encodeURIComponent("Hi Ahmed, I’m contacting you from the Dar Alamana dashboard") + '" target="_blank" rel="noopener">+971 50 776 1628</a></div></div>';
     $("#g-renew").onclick = function () { $("#g-login").hidden = true; $("#g-setup").hidden = false; };
     if ($("#s-back")) $("#s-back").onclick = function () { $("#g-login").hidden = false; $("#g-setup").hidden = true; };
     $("#g-login").onsubmit = function (e) {
       e.preventDefault(); var f = this, b = $("button[type=submit]", f); b.disabled = true; $("#g-err").textContent = "";
       unseal(box, $("#g-pass").value).then(function (v) {
         return checkToken(v.token).then(function (why) { if (why) { $("#g-err").textContent = why; b.disabled = false; return; } saveSession(v); route(true); });
-      }, function () { $("#g-err").textContent = "كلمة المرور غلط، جرّب تاني."; b.disabled = false; });
+      }, function () { $("#g-err").textContent = "Wrong password. Please try again."; b.disabled = false; });
     };
     $("#g-setup").onsubmit = function (e) {
       e.preventDefault(); var t = $("#s-token").value.trim(), p = $("#s-pass").value, b = $("button[type=submit]", this);
-      if (p.length < 10) { $("#s-err").textContent = "كلمة المرور لازم ١٠ حروف على الأقل."; return; }
-      if (p !== $("#s-pass2").value) { $("#s-err").textContent = "كلمتين المرور مش زي بعض."; return; }
+      if (p.length < 10) { $("#s-err").textContent = "The password needs at least 10 characters."; return; }
+      if (p !== $("#s-pass2").value) { $("#s-err").textContent = "The two passwords don’t match."; return; }
       b.disabled = true; $("#s-err").textContent = "";
       checkToken(t).then(function (why) {
         if (why) throw why;
         var v = { token: t }; S.vault = v;
-        return saveAuth(v, p, "إعداد كلمة مرور لوحة التحكم").then(function () { saveSession(v); route(true); });
-      }).catch(function (why) { $("#s-err").textContent = typeof why === "string" ? why : "التوكن مش شغال أو مالوش صلاحية على المستودع."; b.disabled = false; });
+        return saveAuth(v, p, "Set up admin password").then(function () { saveSession(v); route(true); });
+      }).catch(function (why) { $("#s-err").textContent = typeof why === "string" ? why : "This token doesn’t work, or it can’t access the repository."; b.disabled = false; });
     };
   }
 
-  /* ---------- التنقل ---------- */
+  /* ---------- navigation ---------- */
   function failView(e) {
     if (e && e.message === "401") return;
-    $("#main").innerHTML = '<div class="card empty">مش قادر أحمّل البيانات دلوقتي. اتأكد من النت وجرّب تاني.<br><br><button class="btn" onclick="location.reload()">حاول تاني</button></div>';
+    $("#main").innerHTML = '<div class="card empty">Can’t load your data right now. Check your internet and try again.<br><br><button class="btn" onclick="location.reload()">Try again</button></div>';
   }
   var lastHash = location.hash, skip = false;
   function route(force) {
@@ -815,7 +815,7 @@
     if (skip) { skip = false; return; }
     if (S.dirty) {
       var to = location.hash; skip = true; history.replaceState(null, "", lastHash || "#/");
-      confirmBox("تخرج من غير ما تحفظ؟", "عندك تعديلات على المقال ماتحفظتش، هتضيع لو خرجت.", "اخرج من غير حفظ", true).then(function (ok) {
+      confirmBox("Leave without saving?", "You have changes that are not saved. They will be lost if you leave.", "Leave without saving", true).then(function (ok) {
         skip = false; if (ok) { S.dirty = false; location.hash = to; }
       });
       return;
@@ -824,7 +824,7 @@
   });
   window.addEventListener("beforeunload", function (e) { if (S.dirty) { e.preventDefault(); e.returnValue = ""; } });
 
-  window.__darMd = { toHtml: mdToHtml, toMd: htmlToMd };   // للاختبار
+  window.__darMd = { toHtml: mdToHtml, toMd: htmlToMd };   // for tests
   S.vault = loadSession();
   route(true);
 })();

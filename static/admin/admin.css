@@ -1,10 +1,10 @@
-/* لوحة تحكم دار الأمانة */
+/* Dar Alamana admin dashboard */
 :root {
   --p: #5A3E98; --p-d: #3B2870; --p-dd: #24173F; --p-l: #F3EFFA; --p-ll: #F8F6FC;
   --teal: #17B8A6; --teal-d: #12998A; --red: #C0392B; --red-l: #FDECEA; --amber: #B7791F; --amber-l: #FFF6E5;
   --ink: #24173F; --muted: #6b6280; --line: #ECE6F7; --line-d: #DCD3EE; --bg: #F7F5FB; --card: #fff;
   --r: 18px; --sh: 0 10px 30px -18px rgba(59,40,112,.35);
-  --f: "IBM Plex Sans Arabic", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f: "IBM Plex Sans", "IBM Plex Sans Arabic", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15px/1.6 var(--f); -webkit-text-size-adjust: 100%; }
@@ -40,14 +40,14 @@ svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor;
 .dev-sig a { color: var(--teal-d); font-weight: 600; text-decoration: none; direction: ltr; display: inline-flex; align-items: center; gap: 5px; }
 
 /* form fields */
-.fld { display: block; text-align: right; margin-bottom: 16px; }
+.fld { display: block; text-align: left; margin-bottom: 16px; }
 .fld > span { display: block; font-size: 13.5px; font-weight: 600; margin-bottom: 6px; }
 .fld > small { display: block; color: var(--muted); font-size: 12.5px; margin-top: 5px; }
 .inp { width: 100%; min-height: 48px; border: 1.5px solid var(--line-d); border-radius: 12px; padding: 10px 14px; background: #fff; outline: none; font-size: 16px; }
 textarea.inp { min-height: 90px; resize: vertical; line-height: 1.7; }
 .inp:focus { border-color: var(--p); box-shadow: 0 0 0 4px rgba(90,62,152,.12); }
 .inp.ltr { direction: ltr; text-align: left; }
-.err { min-height: 20px; color: var(--red); font-size: 13px; margin: -6px 0 10px; text-align: right; }
+.err { min-height: 20px; color: var(--red); font-size: 13px; margin: -6px 0 10px; text-align: left; }
 .ok { color: var(--teal-d); }
 
 /* app shell */
@@ -62,8 +62,8 @@ textarea.inp { min-height: 90px; resize: vertical; line-height: 1.7; }
 .tabs a.on { background: var(--p-l); color: var(--p-d); }
 .top .sp { flex: 1; }
 .menu { position: relative; }
-.menu-pop { position: absolute; left: 0; top: calc(100% + 8px); background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--sh); padding: 6px; min-width: 210px; z-index: 60; }
-.menu-pop button, .menu-pop a { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 12px; border: 0; background: none; border-radius: 10px; text-align: right; cursor: pointer; text-decoration: none; color: var(--ink); font-weight: 500; }
+.menu-pop { position: absolute; right: 0; top: calc(100% + 8px); background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--sh); padding: 6px; min-width: 210px; z-index: 60; }
+.menu-pop button, .menu-pop a { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 12px; border: 0; background: none; border-radius: 10px; text-align: left; cursor: pointer; text-decoration: none; color: var(--ink); font-weight: 500; }
 .menu-pop button:hover, .menu-pop a:hover { background: var(--p-ll); }
 .menu-pop .red { color: var(--red); }
 .btab { display: none; }
@@ -98,7 +98,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 22px 16px 120px; }
 .rank { list-style: none; margin: 0; padding: 0; }
 .rank li { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
 .rank li:last-child { border: 0; }
-.rank .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: ltr; text-align: right; }
+.rank .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rank .n { font-weight: 700; color: var(--p-d); }
 .deploy { display: flex; align-items: center; gap: 10px; font-size: 14px; }
 .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--teal); flex: none; }
@@ -136,7 +136,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 22px 16px 120px; }
 .cover-act { display: flex; gap: 8px; margin-top: 8px; }
 .cover-act .btn { flex: 1; }
 .title-inp { font-size: 22px; font-weight: 700; min-height: 56px; }
-.count { float: left; font-weight: 500; color: var(--muted); font-size: 12px; }
+.count { float: right; font-weight: 500; color: var(--muted); font-size: 12px; }
 .count.over { color: var(--red); }
 .tb { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px; border: 1.5px solid var(--line-d); border-bottom: 0; border-radius: 12px 12px 0 0; background: var(--p-ll); position: sticky; top: 62px; z-index: 5; }
 .tb button { min-width: 38px; height: 38px; padding: 0 9px; border: 0; background: none; border-radius: 9px; cursor: pointer; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-size: 14px; color: var(--p-dd); }
@@ -156,15 +156,15 @@ main { max-width: 1100px; margin: 0 auto; padding: 22px 16px 120px; }
 details.adv summary { cursor: pointer; font-weight: 600; color: var(--p-d); padding: 4px 0; }
 .switch { display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer; font-weight: 600; }
 .switch input { appearance: none; -webkit-appearance: none; width: 46px; height: 28px; border-radius: 99px; background: var(--line-d); position: relative; cursor: pointer; transition: .2s; flex: none; margin: 0; }
-.switch input::after { content: ""; position: absolute; top: 3px; right: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+.switch input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
 .switch input:checked { background: var(--amber); }
-.switch input:checked::after { right: 21px; }
+.switch input:checked::after { left: 21px; }
 .ed-actions { display: grid; gap: 8px; }
 .ed-bar { display: none; }
 
 /* modal + toast */
 .modal { position: fixed; inset: 0; z-index: 200; background: rgba(36,23,63,.45); display: flex; align-items: center; justify-content: center; padding: 16px; }
-.modal .g-card { text-align: right; }
+.modal .g-card { text-align: left; }
 .modal .g-card h1 { font-size: 19px; }
 .modal .row { display: flex; gap: 10px; margin-top: 8px; }
 .modal .row .btn { flex: 1; margin: 0; }
