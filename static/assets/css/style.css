@@ -938,3 +938,5 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
   .pillar::after,.scard::after,.dcard::after,.ccard::after,.steps li::after,.bcard::after,.wizard::after{opacity:.03}
   .ccard-wa::after{opacity:.05}
 }
+/* VIP copy (2026-11-17): keep the longer WhatsApp label on one line on phones */
+@media (max-width:640px){.hv-ctas .btn{white-space:nowrap;font-size:clamp(.82rem,3.6vw,.95rem);gap:6px}}

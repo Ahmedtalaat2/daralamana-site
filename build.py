@@ -517,8 +517,8 @@ def p_404(L):
 
 # ---------- blog pages ----------
 BT = {
-    "ar": {"title": "المدونة", "text": "نصايح ومعلومات تساعدك تهتم بأهلك في البيت، من فريق دار الأمانة.", "latest": "من المدونة", "latest_title": "نصايح تهمّك", "all": "كل المقالات", "read": "اقرأ المقال", "empty": "المقالات جاية قريب.", "related": "مقالات ثانية", "note": "المعلومات هنا عامة للتوعية، وما تغني عن استشارة الطبيب المعالج."},
-    "en": {"title": "Blog", "text": "Practical tips to help you care for your loved ones at home, from the Dar Alamana team.", "latest": "From the blog", "latest_title": "Helpful reads", "all": "All articles", "read": "Read article", "empty": "Articles are coming soon.", "related": "More articles", "note": "This information is general and does not replace advice from the treating doctor."},
+    "ar": {"title": "المدونة", "text": "معلومات ونصائح تعينكم على رعاية أهلكم في المنزل، من فريق دار الأمانة.", "latest": "من المدونة", "latest_title": "قراءات تهمّكم", "all": "كل المقالات", "read": "اقرأ المقال", "empty": "مقالاتنا قادمة قريبًا.", "related": "مقالات أخرى", "note": "المعلومات الواردة هنا عامة للتوعية، ولا تغني عن استشارة الطبيب المعالج."},
+    "en": {"title": "Blog", "text": "Practical guidance to help you care for your loved ones at home, from the Dar Alamana team.", "latest": "From the blog", "latest_title": "Worthwhile reads", "all": "All articles", "read": "Read article", "empty": "Articles are coming soon.", "related": "More articles", "note": "This information is general and does not replace advice from the treating doctor."},
 }
 
 def post_img(d):
