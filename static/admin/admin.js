@@ -282,7 +282,7 @@
         stat("", "eye", "Page views · 30 days", "st-month") +
         '<div class="card stat"><div class="k">' + ic("article") + 'Published articles</div><div class="v">' + live.length + '</div><div class="s">Arabic ' + ar + " · English " + en + (drafts ? " · " + drafts + " draft" + (drafts > 1 ? "s" : "") : "") + "</div></div></div>" +
         '<div class="grid g3 sec">' +
-        '<div class="card glow">' + (u
+        '<div class="card glow"><div class="cta-ic">' + ic(u ? "plus" : "chart") + "</div>" + (u
           ? '<h2>Share something helpful</h2><p>New articles help families find you on Google. Write one in a few minutes.</p><a class="btn pri" href="#/new">' + ic("plus") + "Write a new article</a>"
           : '<h2>See who visits your website</h2><p>Connect the free visitor counter once. Then all your numbers show up right here.</p><button class="btn pri" id="go-umami">' + ic("chart") + "Connect visitor counter</button>") + "</div>" +
         '<div class="card"><h2>' + ic("eye") + 'Top pages <small class="muted">· 30 days</small></h2>' + waiting("u-pages") + "</div>" +
@@ -353,11 +353,11 @@
     var line = "M" + xy[0][0] + "," + xy[0][1];
     for (var i = 1; i < xy.length; i++) { var a = xy[i - 1], b = xy[i], mx = (a[0] + b[0]) / 2; line += " C" + mx + "," + a[1] + " " + mx + "," + b[1] + " " + b[0] + "," + b[1]; }
     var area = line + " L" + xy[xy.length - 1][0] + "," + (H - B) + " L" + xy[0][0] + "," + (H - B) + " Z";
-    var grid = ""; for (var v = 0; v <= top; v += step) { var y = Y(v); grid += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y + '" y2="' + y + '" stroke="rgba(255,255,255,.07)"/><text x="' + (L - 8) + '" y="' + (y + 4) + '" fill="#6F6688" font-size="11" text-anchor="end">' + num(v) + "</text>"; }
-    box.innerHTML = '<svg viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none" aria-label="Page views per day"><defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9B78D7" stop-opacity=".55"/><stop offset="1" stop-color="#5A3E98" stop-opacity="0"/></linearGradient>' +
-      '<linearGradient id="gl" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9B78D7"/><stop offset="1" stop-color="#E4D4FA"/></linearGradient></defs>' + grid +
+    var grid = ""; for (var v = 0; v <= top; v += step) { var y = Y(v); grid += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y + '" y2="' + y + '" stroke="#ECE7F6"/><text x="' + (L - 8) + '" y="' + (y + 4) + '" fill="#9A92AE" font-size="11" text-anchor="end">' + num(v) + "</text>"; }
+    box.innerHTML = '<svg viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none" aria-label="Page views per day"><defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9B78D7" stop-opacity=".35"/><stop offset="1" stop-color="#5A3E98" stop-opacity="0"/></linearGradient>' +
+      '<linearGradient id="gl" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5A3E98"/><stop offset="1" stop-color="#9B78D7"/></linearGradient></defs>' + grid +
       '<path d="' + area + '" fill="url(#ga)"/><path d="' + line + '" fill="none" stroke="url(#gl)" stroke-width="2.4" stroke-linecap="round"/>' +
-      '<line id="lc-v" y1="' + T + '" y2="' + (H - B) + '" stroke="rgba(202,177,234,.6)" stroke-dasharray="3 4"/><circle id="lc-d" r="6" fill="#F1EDF9" stroke="#9B78D7" stroke-width="3"/></svg><div class="tip" id="lc-t"></div>';
+      '<line id="lc-v" y1="' + T + '" y2="' + (H - B) + '" stroke="rgba(90,62,152,.35)" stroke-dasharray="3 4"/><circle id="lc-d" r="6" fill="#fff" stroke="#5A3E98" stroke-width="3"/></svg><div class="tip" id="lc-t"></div>';
     var xs = $(".lc-x", el), every = Math.ceil(pts.length / 7);
     xs.innerHTML = pts.map(function (p, i) { return i % every === 0 || i === pts.length - 1 ? "<span>" + p.d.getDate() + " " + AR_M[p.d.getMonth()] + "</span>" : ""; }).join("");
     function show(i) {
@@ -590,7 +590,7 @@
         '<div class="rte" id="e-body" contenteditable="true" data-ph="Start writing here... Use the Heading button for headings." spellcheck="true"></div></div>' +
         "</div></div>" +
         '<aside class="ed-side">' +
-        '<div class="card ed-actions side"><button class="btn pri" data-save="pub">' + ic("rocket") + (orig && !orig.d.draft ? "Save changes" : "Publish") + '</button><button class="btn" data-save="draft">Save as draft</button>' +
+        '<div class="card ed-actions acts"><button class="btn pri" data-save="pub">' + ic("rocket") + (orig && !orig.d.draft ? "Save changes" : "Publish") + '</button><button class="btn" data-save="draft">Save as draft</button>' +
         (orig ? '<button class="btn danger sm" id="e-del">' + ic("trash") + "Delete article</button>" : "") + "</div>" +
         '<div class="card"><h2>' + ic("image") + 'Cover photo</h2><div class="cover" id="e-cover" role="button" tabindex="0"></div>' +
         '<div class="cover-act"><button class="btn sm" id="e-cover-pick">Choose photo</button><button class="btn sm ghost" id="e-cover-rm">Remove</button></div>' +
