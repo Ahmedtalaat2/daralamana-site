@@ -10,6 +10,7 @@ window.SITE_CONFIG = {
   BLOGGER_URL: "",       // مثال: "https://daralamana.blogspot.com"
   // أدوات القياس
   GA4_ID: "",            // Google Analytics 4   مثال: "G-XXXXXXXXXX"
+  UMAMI_WEBSITE_ID: "",  // عداد الزوار (Umami) — بيتظبط من لوحة التحكم
   GOOGLE_ADS_ID: "",     // Google Ads           مثال: "AW-XXXXXXXXX"
   GOOGLE_ADS_LEAD_LABEL: "",
   META_PIXEL_ID: "",
