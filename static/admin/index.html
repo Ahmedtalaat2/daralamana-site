@@ -65,6 +65,8 @@
   #pw-btn { position: fixed; left: 14px; bottom: 14px; z-index: 8000; border: 1px solid #DCD3EE; background: #fff; color: #3B2870; border-radius: 999px;
     padding: 7px 14px; font: 600 12.5px "IBM Plex Sans Arabic", system-ui, sans-serif; cursor: pointer; box-shadow: 0 6px 18px -8px rgba(59,40,112,.3); }
   #pw-btn[hidden] { display: none; }
+  /* phones: Sveltia puts its tab bar at the bottom, so the button moves to the top corner of the home screen */
+  #pw-btn.m { left: auto; right: 12px; top: calc(10px + env(safe-area-inset-top)); bottom: auto; padding: 6px 12px; font-size: 12px; }
   .pw-modal { position: fixed; inset: 0; z-index: 9500; background: rgba(36,23,63,.45); display: flex; align-items: center; justify-content: center; padding: 16px; direction: rtl;
     font-family: "IBM Plex Sans Arabic", system-ui, sans-serif; color: #24173F; }
 </style>
@@ -178,7 +180,9 @@
   function watch() {
     function check() {
       var signedIn = !!stored() && !!document.querySelector("[role=navigation], nav, header[role=banner]");
-      $("pw-btn").hidden = !signedIn;
+      var phone = matchMedia("(max-width: 768px)").matches, home = /^#?\/?(collections\/?)?$/.test(location.hash);
+      $("pw-btn").classList.toggle("m", phone);
+      $("pw-btn").hidden = !signedIn || (phone && !home);   // on phones only on the home screen, never over the tab bar
       var onSignIn = /Sign In/i.test(document.body.innerText || "") && !document.querySelector("[role=navigation], nav, header[role=banner]");
       if (!onSignIn) { since = 0; return; }
       if (!stored()) return location.reload();               // signed out
@@ -188,7 +192,7 @@
         location.reload();
       }
     }
-    new MutationObserver(check).observe(document.body, { childList: true, subtree: true }); setInterval(check, 1000); check();
+    new MutationObserver(check).observe(document.body, { childList: true, subtree: true }); setInterval(check, 1000); addEventListener("hashchange", check); check();
   }
 
   async function boot() {
